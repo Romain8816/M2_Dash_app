@@ -1,0 +1,14 @@
+body{
+    background-color:white;
+}
+
+
+.top{
+    background-color:#6DE3E0;
+    padding-bottom: 0.2%; /* espace entre le texte et le bas du container */
+    margin-bottom: 0.4%;
+}
+
+.logo{
+    width: 10%;
+}   
