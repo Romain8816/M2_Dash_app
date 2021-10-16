@@ -1,23 +1,31 @@
 import dash
 from dash import dcc
 from dash import html
+from dash.html.Label import Label
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 from dash.html.Div import Div
+from pandas.core.indexes import multi
 import plotly.express as px
 import pandas as pd
 from dash.dependencies import Input,Output
 import os
 import pandas as pd
+import json
 
-app = dash.Dash(__name__)
+
+from layout.layout import dataset_selection, target_selection,features_selection, data_path
+
+app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title="Machine Learning App"
 
-data_path = os.getcwd() +'\\data\\'
-files = [f for f in os.listdir(data_path)]
+
+
+form = dbc.Form([dataset_selection,target_selection,features_selection])
 
 app.layout = html.Div(children=[
-        # 
+        
+        dcc.Store(id='columns'), #va servir à stocker le nom des variables du dataset
         html.Div(
             [
                 html.H1('Réalisation d’une interface d’analyse de données par apprentissage supervisé'),
@@ -26,37 +34,64 @@ app.layout = html.Div(children=[
             ],className='container-fluid top'
         ),
         html.Div(
-            [
-                html.Label("Jeu de données"),
-                dcc.Dropdown(
-                    id='file_selection',
-                    options=[{'label':i, 'value':i} for i in files],
-                    searchable=False,
-                    placeholder="Choisir un jeu de données",
-                    clearable=False, 
-                    style={'width':'50%'},
-                )
-            ],className='container-fluid'
-        ),
-        html.Div([
-            dcc.Dropdown(id='variable_cible', placeholder="Sélectionner la variable cible", searchable=False, style={'display':'none'})
-        ])
-        
+            form, className='container-fluid'
+        )
 ])
 
+
+######################################################## 
 @app.callback(
-    Output(component_id='variable_cible', component_property='style'),
-    Output(component_id='variable_cible', component_property='options'),
+    Output(component_id='columns', component_property='data'),
     Input(component_id='file_selection', component_property='value')
 )
-def selection_variable_cible(input_value):
+def FileSelection(file):
+    if file is None:
+        raise PreventUpdate
+    else:
+        variables=pd.read_csv(data_path+file, index_col=0, nrows=0).columns.tolist()
+        return json.dumps(variables)
+
+
+## Chargement des variables pour la variable cible à sélectionner
+@app.callback(
+    Output(component_id='target_selection', component_property='options'),
+    Input(component_id='file_selection', component_property='value')
+)
+def TargetSelection(file):
     # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné
-    if input_value is None:
+    if file is None:
         raise PreventUpdate
     else :
-        df = pd.read_csv(data_path+input_value)
-        variable_list= list(df.columns.values)
-        return {'display': 'block', 'width':'50%'}, [{'label':v, 'value':v} for v in variable_list]
+        target_list = pd.read_csv(data_path+file, header =0, nrows=0).columns.tolist()
+        return [{'label':v, 'value':v} for v in target_list]
+
+## Chargement des variables pour les variables explicatives à sélectionner
+@app.callback(
+    Output(component_id='features_selection', component_property='options'),
+    [
+        Input(component_id='target_selection', component_property='value'),
+        Input(component_id='columns', component_property='data')
+    ]
+)
+def FeaturesSelection(target,columns):
+    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné
+    if target is None:
+        raise PreventUpdate
+    else :
+        #target_list = pd.read_csv(data_path+file, index_col=0, nrows=0).columns.tolist()
+        data = json.loads(columns)
+        #df = pd.read_csv(data_path+file)
+        #variable_list= list(df.columns.values)
+        return ([{'label':v, 'value':v} for v in data if v!=target])
+
+@app.callback(
+    Output(component_id='features_selection', component_property='value'),
+    Input(component_id='features_selection', component_property='options')
+    
+)
+def SetDefaultValue(options):
+    defaultval = [d['value'] for d in options]
+    return defaultval
 
 
 if __name__=='__main__':
