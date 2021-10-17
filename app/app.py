@@ -2,6 +2,7 @@ import dash
 from dash import dcc
 from dash import html
 import dash_bootstrap_components as dbc
+from dash_bootstrap_components._components.Row import Row
 import plotly.express as px
 import pandas as pd
 from dash.dependencies import Input,Output,State
@@ -9,7 +10,7 @@ import os
 import pandas as pd
 import json
 from dash.exceptions import PreventUpdate
-
+from dash import dash_table
 
 from layout.layout import dataset_selection, target_selection,features_selection, data_path
 
@@ -21,7 +22,6 @@ form = dbc.Form([dataset_selection,target_selection,features_selection])
 
 app.layout = html.Div(children=[
         
-        dcc.Store(id='columns'), #va servir à stocker le nom des variables du dataset
         html.Div(
             [
                 html.H1('Réalisation d’une interface d’analyse de données par apprentissage supervisé'),
@@ -30,7 +30,17 @@ app.layout = html.Div(children=[
             ],className='container-fluid top'
         ),
         html.Div(
-            form, className='container-fluid'
+            [
+                dbc.Row(
+                    [
+                        form,
+                        dbc.Col(
+                                html.Div(id='dataset'),width=6
+                            )
+                    ],justify="start",  
+                )
+            ]
+            , className='container-fluid'
         ),
         html.Div(id='test')
 ])
@@ -40,14 +50,25 @@ app.layout = html.Div(children=[
 @app.callback(
     Output(component_id='target_selection', component_property='value'),
     Output(component_id='target_selection', component_property='options'),
+    Output(component_id='dataset', component_property='children'),
     Input(component_id='file_selection', component_property='value')
 )
 def FileSelection(file):
     if file is None:
         raise PreventUpdate
     else:
-        variables=pd.read_csv(data_path+file, header=0, nrows=0).columns.tolist()
-        return (None,[{'label':v, 'value':v} for v in variables])
+        df = pd.read_csv(data_path+file)
+        variables = df.columns.tolist()
+        table =dash_table.DataTable(
+                data=df.to_dict('records'),
+                columns=[{"name":i,"id":i} for i in df.columns],
+                fixed_rows={'headers': True},
+                page_size=20,
+                style_cell={'textAlign': 'left'},
+                style_table={'height': '400px', 'overflowY': 'auto','overflowX': 'auto'},
+                style_header={'backgroundColor': 'dark','fontWeight': 'bold'}
+            )
+        return (None,[{'label':v, 'value':v} for v in variables],table)
 
 # Chargement des variables pour les variables explicatives à sélectionner ---------------------------------------------------------
 @app.callback(
