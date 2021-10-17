@@ -42,7 +42,9 @@ app.layout = html.Div(children=[
             ]
             , className='container-fluid'
         ),
-        html.Div(id='test')
+        html.Div(
+            className='container-fluid'
+        )
 ])
 
 

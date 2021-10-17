@@ -19,7 +19,7 @@ files = [f for f in os.listdir(data_path)]
 
 dataset_selection = dbc.Row(
     [
-        dbc.Label("Jeu de données", html_for="file_selection", width=1),
+        dbc.Label("", html_for="file_selection", width=1,style={'font-weight': 'bold'}),
         dbc.Col(
             dcc.Dropdown(
                 id='file_selection',
@@ -38,7 +38,7 @@ dataset_selection = dbc.Row(
 
 target_selection = dbc.Row(
     [
-        dbc.Label("Variable cible", html_for="target_selection", width=1),
+        dbc.Label("Variable cible", html_for="target_selection", width=1,style={'color': 'red','font-weight': 'bold'}),
         dbc.Col(
             dcc.Dropdown(
                 id='target_selection', 
@@ -56,7 +56,7 @@ target_selection = dbc.Row(
 
 features_selection = dbc.Row(
     [
-        dbc.Label("Variables explicatives", html_for="features_selection", width=1),
+        dbc.Label("Variables explicatives", html_for="features_selection", width=1,style={'color': 'blue','font-weight': 'bold'}),
         dbc.Col(
             dcc.Dropdown(
                     id='features_selection',
