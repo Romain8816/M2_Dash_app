@@ -1,24 +1,20 @@
 import dash
 from dash import dcc
 from dash import html
-from dash.html.Label import Label
 import dash_bootstrap_components as dbc
-from dash.exceptions import PreventUpdate
-from dash.html.Div import Div
-from pandas.core.indexes import multi
 import plotly.express as px
 import pandas as pd
-from dash.dependencies import Input,Output
+from dash.dependencies import Input,Output,State
 import os
 import pandas as pd
 import json
+from dash.exceptions import PreventUpdate
 
 
 from layout.layout import dataset_selection, target_selection,features_selection, data_path
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title="Machine Learning App"
-
 
 
 form = dbc.Form([dataset_selection,target_selection,features_selection])
@@ -35,64 +31,63 @@ app.layout = html.Div(children=[
         ),
         html.Div(
             form, className='container-fluid'
-        )
+        ),
+        html.Div(id='test')
 ])
 
 
-######################################################## 
+# Chargement des variables pour la variable cible à sélectionner selon le fichier choisit --------------------------------------------------------------------------
 @app.callback(
-    Output(component_id='columns', component_property='data'),
+    Output(component_id='target_selection', component_property='value'),
+    Output(component_id='target_selection', component_property='options'),
     Input(component_id='file_selection', component_property='value')
 )
 def FileSelection(file):
     if file is None:
         raise PreventUpdate
     else:
-        variables=pd.read_csv(data_path+file, index_col=0, nrows=0).columns.tolist()
-        return json.dumps(variables)
+        variables=pd.read_csv(data_path+file, header=0, nrows=0).columns.tolist()
+        return (None,[{'label':v, 'value':v} for v in variables])
 
-
-## Chargement des variables pour la variable cible à sélectionner
+# Chargement des variables pour les variables explicatives à sélectionner ---------------------------------------------------------
 @app.callback(
-    Output(component_id='target_selection', component_property='options'),
-    Input(component_id='file_selection', component_property='value')
-)
-def TargetSelection(file):
-    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné
-    if file is None:
-        raise PreventUpdate
-    else :
-        target_list = pd.read_csv(data_path+file, header =0, nrows=0).columns.tolist()
-        return [{'label':v, 'value':v} for v in target_list]
-
-## Chargement des variables pour les variables explicatives à sélectionner
-@app.callback(
-    Output(component_id='features_selection', component_property='options'),
-    [
+        Output(component_id='features_selection', component_property='options'),
+        Output(component_id='features_selection', component_property='value'),
         Input(component_id='target_selection', component_property='value'),
-        Input(component_id='columns', component_property='data')
-    ]
+        Input(component_id='target_selection', component_property='options')
 )
-def FeaturesSelection(target,columns):
-    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné
+def TargetSelection(target,options):
+    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné -------------------------------------------------------------
     if target is None:
-        raise PreventUpdate
+        return ([{'label':"", 'value':""}],None)
     else :
-        #target_list = pd.read_csv(data_path+file, index_col=0, nrows=0).columns.tolist()
-        data = json.loads(columns)
-        #df = pd.read_csv(data_path+file)
-        #variable_list= list(df.columns.values)
-        return ([{'label':v, 'value':v} for v in data if v!=target])
+        variables = [d['value'] for d in options]
+        return (
+            [{'label':v, 'value':v} for v in variables if v!=target],
+            [v for v in variables if v!=target]
+        )
 
-@app.callback(
-    Output(component_id='features_selection', component_property='value'),
-    Input(component_id='features_selection', component_property='options')
-    
-)
-def SetDefaultValue(options):
-    defaultval = [d['value'] for d in options]
-    return defaultval
+# @app.callback(
+#     Output('test','children'),
+#     Input('file_selection','value'),
+#     Input('target_selection','value'),
+#     Input('features_selection','value')
+# )
+# def display(file_selection,target_selection,feature_selection):
+#     ctx=dash.callback_context
+
+#     ctx_msg = json.dumps({
+#         'states': ctx.states,
+#         'triggered': ctx.triggered,
+#         'inputs': ctx.inputs
+#     }, indent=2)
+ 
+#     return html.Div([
+#         html.Pre(ctx_msg)
+#     ])
 
 
 if __name__=='__main__':
     app.run_server(debug=True)
+
+

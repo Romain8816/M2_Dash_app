@@ -28,6 +28,7 @@ dataset_selection = dbc.Row(
                 placeholder="Choisir un jeu de données",
                 clearable=False, 
                 style={'width':'50%'},
+                persistence =False
             ),
             width=10,
         ),
@@ -43,8 +44,9 @@ target_selection = dbc.Row(
                 id='target_selection', 
                 placeholder="Sélectionner la variable cible", 
                 searchable=False,clearable=False,
-                persistence=False, 
-                style={'width':'50%'}
+                style={'width':'50%'},
+                persistence=False,
+                persistence_type='memory'
             ),
             width=10,
         ),
@@ -63,6 +65,8 @@ features_selection = dbc.Row(
                     clearable=False,
                     multi=True,
                     style={'width':'50%'},
+                    persistence=False,
+                    persistence_type='memory'
             ),
             width=10,
         ),
