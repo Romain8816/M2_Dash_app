@@ -1,6 +1,7 @@
 import dash
 from dash import dcc
 from dash import html
+from dash.development.base_component import Component
 import dash_bootstrap_components as dbc
 from dash_bootstrap_components._components.Row import Row
 import plotly.express as px
@@ -16,13 +17,13 @@ import base64
 import io
 #import dask.dataframe as dd
 
-from layout.layout import drag_and_drop, dataset_selection, target_selection,features_selection, data_path
+from layout.layout import drag_and_drop, parse_contents, location_folder, dataset_selection, target_selection,features_selection, data_path
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title="Machine Learning App"
 
 
-form = dbc.Form([dataset_selection,target_selection,features_selection])
+form = dbc.Form([location_folder, dataset_selection,target_selection,features_selection])
 
 regression_models = ['Régression linéaire', 'Régression polynomiale', 'Régression lasso']
 classfications_models = ['Arbre de décision','SVM','KNN']
@@ -49,6 +50,7 @@ app.layout = html.Div(children=[
             ]
             , className='container-fluid'
         ),
+        html.Div(id='output-data-upload'), # Affichage du tableau
         html.Div(
             dbc.RadioItems(
                 id="model_selection",
@@ -57,6 +59,31 @@ app.layout = html.Div(children=[
         ),
         dcc.Store(id='num_variables')
 ])
+
+
+# @app.callback(
+#     Output('',''),
+#     Input('submit-button-state', 'n_clicks'),
+#     State(component_id="location_folder",component_property='value')
+# )
+
+
+
+
+# Affichage du tableau après ajout d'un fichier. 
+# @app.callback(Output('output-data-upload', 'children'),
+#               Input('upload-data', 'contents'), # les données du fichier
+#               State('upload-data', 'filename'), # nom du fichier
+# ) 
+# def update_output(list_of_contents, list_of_names):
+#     if list_of_contents is not None:
+#         children = [
+#             parse_contents(c, n) for c, n in
+#             zip(list_of_contents, list_of_names)]
+#         return children
+
+
+
 
 
 # Chargement des variables pour la variable cible à sélectionner selon le fichier choisit --------------------------------------------------------------------------
