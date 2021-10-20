@@ -16,6 +16,7 @@ import numpy as np
 import base64
 import io
 from detect_delimiter import detect
+import dash_daq as daq
 #import dask.dataframe as dd
 
 from layout.layout import drag_and_drop, parse_contents, location_folder, dataset_selection, target_selection,features_selection, data_path
@@ -27,7 +28,7 @@ app.title="Machine Learning App"
 form = dbc.Form([location_folder, dataset_selection,target_selection,features_selection])
 
 regression_models = ['Régression linéaire', 'Régression polynomiale', 'Régression lasso']
-classfication_models = ['Arbre de décision','SVM','KNN']
+classfication_models = ['Arbre de décision','SVM','KNN',"CAH","kmeans"]
 
 app.layout = html.Div(children=[
         html.Div(
@@ -61,9 +62,16 @@ app.layout = html.Div(children=[
         html.Br(),
         html.Div(
             dbc.Checklist(
-                id="centrer_reduire",
+                id="centrer_reduire"
             ),
             className='container-fluid'
+        ),
+        html.Br(),
+        html.Div(
+            dcc.Slider(
+            id='kmeans-nb-clust'
+        ),
+        className='container-fluid'
         ),
         dcc.Store(id='num_variables')
 ])
@@ -168,16 +176,42 @@ def TargetSelection(target,options,feature_selection_value):
     Input('model_selection','value'))
 def model_selection(num_variables,target_selection,feature_selection,file,selected_model):
     if target_selection != None:
-        if selected_model == "Arbre de décision":
-            bool = True
-        else:
-            bool = False
         if target_selection in num_variables:
-            return [{"label":v,"value":v} for v in regression_models],[{"label":"centrer réduire","value":"yes","disabled":bool}]
+                return [{"label":v,"value":v} for v in regression_models],[{"label":"centrer réduire","value":"yes"}]
         else:
-            return [{"label":v,"value":v} for v in classfication_models],[{"label":"centrer réduire","value":"yes","disabled":bool}]
+            if selected_model == "Arbre de décision":
+                return [{"label":v,"value":v} for v in classfication_models],[]
+            else:
+                return [{"label":v,"value":v} for v in classfication_models],[{"label":"centrer réduire","value":"yes"}]
     else:
         raise PreventUpdate
+
+@app.callback(
+    Output(component_id='kmeans-nb-clust', component_property='value'),
+    Input(component_id='centrer_reduire', component_property='value'),
+    Input(component_id='model_selection', component_property='value'),
+    Input('target_selection','value'),
+    Input('features_selection','value'),
+    Input(component_id='file_selection', component_property='value')
+)
+def param_selection(norm,model,target,features,file):
+
+    if file != None:
+
+        with open(data_path+file) as myfile:
+            firstline = myfile.readline()
+        myfile.close()
+        deliminter = detect(firstline)
+
+        df = pd.read_csv(data_path+file,sep=deliminter)
+
+        print(target)
+        print(features)
+
+        if model_selection == "kmeans":
+            pass
+
+
 
 
 # @app.callback(
