@@ -58,7 +58,7 @@ location_folder = dbc.Row(
     [
         dbc.Col(
             dbc.Input(
-                    type="text", id="location_folder", placeholder="Veuillez définir le chemin absolu du répertoire dans lequel vous souhaitez travailler au format : C:\.."
+                    autocomplete="off",type="text", id="location_folder", placeholder="Veuillez définir le chemin absolu du répertoire dans lequel vous souhaitez travailler au format : C:\.."
                 ),className="mb-3"
         ),
         dbc.Col(
@@ -95,7 +95,7 @@ dataset_selection = dbc.Row(
         dbc.Col(
             dcc.Dropdown(
                 id='file_selection',
-                options=[{'label':i, 'value':i} for i in files],
+                #options=[{'label':i, 'value':i} for i in files],
                 searchable=False,
                 placeholder="Choisir un jeu de données",
                 clearable=False, 
