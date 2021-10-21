@@ -19,7 +19,7 @@ from detect_delimiter import detect
 import dash_daq as daq
 #import dask.dataframe as dd
 
-from layout.layout import drag_and_drop, parse_contents, location_folder, dataset_selection, target_selection,features_selection, data_path
+from layout.layout import drag_and_drop, parse_contents, location_folder, dataset_selection, target_selection,features_selection,
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title="Machine Learning App"
@@ -77,20 +77,35 @@ app.layout = html.Div(children=[
 ])
 
 
-# @app.callback(
-#     Output('',''),
-#     Input('submit-button-state', 'n_clicks'),
-#     State(component_id="location_folder",component_property='value')
-# )
+# Récupération de la liste des fichiers autorisés dans un répertoire renseigné par l'utilisateur---------------------------------------------------------------------------
+@app.callback(
+    Output('file_selection','options'), # mise à jour de la liste des fichiers dans le répertoire
+    Input('validation_folder', 'n_clicks'), # valeur du bouton 
+    State(component_id="location_folder",component_property='value') #valeur de l'input
+)
+def update_files_list(n_clicks,data_path):
+    allowed_extensions =('.csv','.xlsx','.xls')
+    # Si on a appuyer sur le bouton valider alors
+    if n_clicks !=0:
+        # On essaie de parcourir les fichiers dans le répertoire data_path
+        try :
+            files = os.listdir(r'%s' %data_path)
+            filtred_files=allowed_files(data_path,allowed_extensions)
+        # Si le répertoire n'existe
+        except:
+            return dash.no_update, '{} is prime!'.format(data_path)     ######################################/!\ Exception à reprendre
+
+        return ([{'label':f, 'value':(r'%s' %(data_path+'\\'+f))} for f in filtred_files])
+    else:
+        raise PreventUpdate
 
 
 
-
-# Affichage du tableau après ajout d'un fichier.
+# Affichage du tableau après ajout d'un fichier. 
 # @app.callback(Output('output-data-upload', 'children'),
 #               Input('upload-data', 'contents'), # les données du fichier
 #               State('upload-data', 'filename'), # nom du fichier
-# )
+# ) 
 # def update_output(list_of_contents, list_of_names):
 #     if list_of_contents is not None:
 #         children = [
@@ -102,33 +117,45 @@ app.layout = html.Div(children=[
 
 
 
-# Chargement des variables pour la variable cible à sélectionner selon le fichier choisit --------------------------------------------------------------------------
+# Lecture du fichier choisit et mise à jour de la dropdown des variables cibles possibles --------------------------------------------------------------------------
 @app.callback(
     Output(component_id='target_selection', component_property='value'),
     Output(component_id='target_selection', component_property='options'),
     Output(component_id='dataset', component_property='children'),
     Output(component_id='num_variables', component_property='data'),
-    Input(component_id='file_selection', component_property='value')
+    Input(component_id='file_selection', component_property='value'),
 )
-def FileSelection(file):
-    if file is None:
+def FileSelection(file_path):
+    if file_path is None:
         raise PreventUpdate
     else:
-        with open(data_path+file) as myfile:
-            firstline = myfile.readline()
-        myfile.close()
-        deliminter = detect(firstline)
+        if file_path.endswith('.csv'):
+            with open(r'%s' %file_path, "rb") as f:
+                msg = f.read()
+                firstline = f.readline()
+                detection = chardet.detect(msg)
+                encoding= detection["encoding"]
+            f.close()
 
-        df = pd.read_csv(data_path+file,sep=deliminter)
+            with open(r'%s' %file_path) as f:
+                delimiter = detect(f.readline())
+                print(delimiter)
+            f.close()
+        
+            df = pd.read_csv(file_path,encoding=encoding,sep=delimiter)
+
+        elif file_path.endswith(('.xls','.xlsx')):
+            df = pd.read_excel(file_path)       
+
         variables = df.columns.tolist()
         num_variables = df.select_dtypes(include=np.number).columns.tolist()
         table =dash_table.DataTable(
                 data=df.to_dict('records'),
                 columns=[{"name":i,"id":i} for i in df.columns],
-                #fixed_rows={'headers': True},
+                fixed_rows={'headers': True},
                 page_size=20,
-                style_cell={'textAlign': 'left'},
-                style_table={'height': '400px', 'width': '100%', 'minwidth': '100%', 'overflowY': 'auto','overflowX': "scroll"},
+                style_cell={'textAlign': 'left','minWidth': '180px', 'width': '180px', 'maxWidth': '180px'},
+                style_table={'height': '400px', 'overflowY': 'scroll','overflowX': 'scroll'},
                 style_header={'backgroundColor': 'dark','fontWeight': 'bold'}
             )
         return (None,[{'label':v, 'value':v} for v in variables],table,num_variables)
@@ -228,7 +255,7 @@ def param_selection(norm,model,target,features,file):
 #         'triggered': ctx.triggered,
 #         'inputs': ctx.inputs
 #     }, indent=2)
-
+ 
 #     return html.Div([
 #         html.Pre(ctx_msg)
 #     ])
