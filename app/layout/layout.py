@@ -15,10 +15,10 @@ import numpy as np
 import base64
 import io
 
-data_path = os.getcwd() +'/data/'
+data_path = os.getcwd() +'\data\\'
 files = [f for f in os.listdir(r'%s' %data_path)]
 
-# Fonction qui permet de lire un fichier csv ou xls et qui retoune un tableau
+# Fonction qui permet de lire un fichier csv ou xls et qui retoune un tableau 
 def parse_contents(contents, filename):
     content_type, content_string = contents.split(',')
 
@@ -53,12 +53,12 @@ def parse_contents(contents, filename):
     width=10
 )
 
-# Input pour définir le répertoire dans lequel on va choisir le fichier à analyser.
+# Input pour définir le répertoire dans lequel on va choisir le fichier à analyser. 
 location_folder = dbc.Row(
     [
         dbc.Col(
             dbc.Input(
-                    type="text", id="location_folder", placeholder="Veuillez définir le chemin absolu du répertoire dans lequel vous souhaitez travailler au format : C:\.."
+                    autocomplete="off",type="text", id="location_folder", placeholder="Veuillez définir le chemin absolu du répertoire dans lequel vous souhaitez travailler au format : C:\.."
                 ),className="mb-3"
         ),
         dbc.Col(
@@ -95,10 +95,10 @@ dataset_selection = dbc.Row(
         dbc.Col(
             dcc.Dropdown(
                 id='file_selection',
-                options=[{'label':i, 'value':i} for i in files],
+                #options=[{'label':i, 'value':i} for i in files],
                 searchable=False,
                 placeholder="Choisir un jeu de données",
-                clearable=False,
+                clearable=False, 
                 style={'width':'50%'},
                 persistence =False
             ),
@@ -114,8 +114,8 @@ target_selection = dbc.Row(
         dbc.Label("Variable cible", html_for="target_selection", width=1,style={'color': 'red','font-weight': 'bold'}),
         dbc.Col(
             dcc.Dropdown(
-                id='target_selection',
-                placeholder="Sélectionner la variable cible",
+                id='target_selection', 
+                placeholder="Sélectionner la variable cible", 
                 searchable=False,clearable=False,
                 style={'width':'50%'},
                 persistence=False,

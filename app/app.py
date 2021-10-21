@@ -1,29 +1,217 @@
 import dash
 from dash import dcc
 from dash import html
+from dash.development.base_component import Component
+import dash_bootstrap_components as dbc
+from dash_bootstrap_components._components.Row import Row
 import plotly.express as px
 import pandas as pd
-from dash.dependencies import Input,Output
+from dash.dependencies import Input,Output,State
 import os
+import pandas as pd
+import json
+from dash.exceptions import PreventUpdate
+from dash import dash_table
+import numpy as np
+import base64
+import io
+from detect_delimiter import detect
+import cchardet as chardet
+#import dask.dataframe as dd
 
-app = dash.Dash(__name__)
+from layout.layout import drag_and_drop, parse_contents, location_folder, dataset_selection, target_selection,features_selection
+
+app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title="Machine Learning App"
 
-data_path = os.getcwd() +'\\data\\'
-files = [f for f in os.listdir(data_path)]
 
-app.layout = (html.Div(children=[
-        html.H1('Machine Learning App',className='h1'),
+form = dbc.Form([location_folder, dataset_selection,target_selection,features_selection])
 
-        html.P('Application réalisée par Olivier IMBAUD, Inès KARA, Romain DUDOIT'),
-    
-        dcc.Dropdown(
-            id='test',
-            options=[
-                {'label':i, 'value':i} for i in files
-            ])
-    ])
+regression_models = ['Régression linéaire', 'Régression polynomiale', 'Régression lasso']
+classfication_models = ['Arbre de décision','SVM','KNN']
+
+
+
+
+
+def allowed_files(path,extensions):
+    allowed_files=[]
+    for file in os.listdir(path):
+        if file.endswith(extensions):
+            allowed_files.append(file) 
+        else:
+            continue
+    return allowed_files
+
+
+
+
+
+
+
+app.layout = html.Div(children=[
+        html.Div(
+            [
+                html.H1('Réalisation d’une interface d’analyse de données par apprentissage supervisé'),
+                html.H5(['Olivier IMBAUD, Inès KARA, Romain DUDOIT'],style={'color':'white','font-weight':'bold'}),
+                html.H6('Master SISE (2021-2022)',style={'color':'white','font-weight':'bold'})
+            ],className='container-fluid top'
+        ),
+        drag_and_drop,
+        html.Div(
+            [
+                dbc.Row(
+                    [
+                        form,
+                        dbc.Col(
+                                html.Div(id='dataset'),width=10
+                            )
+                    ]
+                )
+            ]
+            , className='container-fluid'
+        ),
+        html.Div(id='output-data-upload'), # Affichage du tableau
+        html.Div(
+            dbc.RadioItems(
+                id="model_selection",
+            ),
+            className='container-fluid'
+        ),
+        dcc.Store(id='data_path'),
+        dcc.Store(id='num_variables')
+])
+
+
+# Récupération de la liste des fichiers autorisés dans un répertoire renseigné par l'utilisateur---------------------------------------------------------------------------
+@app.callback(
+    Output('file_selection','options'), # mise à jour de la liste des fichiers dans le répertoire
+    Input('validation_folder', 'n_clicks'), # valeur du bouton 
+    State(component_id="location_folder",component_property='value') #valeur de l'input
 )
+def update_files_list(n_clicks,data_path):
+    allowed_extensions =('.csv','.xlsx','.xls')
+    # Si on a appuyer sur le bouton valider alors
+    if n_clicks !=0:
+        # On essaie de parcourir les fichiers dans le répertoire data_path
+        try :
+            files = os.listdir(r'%s' %data_path)
+            filtred_files=allowed_files(data_path,allowed_extensions)
+        # Si le répertoire n'existe
+        except:
+            return dash.no_update, '{} is prime!'.format(data_path)     ######################################/!\ Exception à reprendre
+
+        return ([{'label':f, 'value':(r'%s' %(data_path+'\\'+f))} for f in filtred_files])
+    else:
+        raise PreventUpdate
+
+
+
+# Affichage du tableau après ajout d'un fichier. 
+# @app.callback(Output('output-data-upload', 'children'),
+#               Input('upload-data', 'contents'), # les données du fichier
+#               State('upload-data', 'filename'), # nom du fichier
+# ) 
+# def update_output(list_of_contents, list_of_names):
+#     if list_of_contents is not None:
+#         children = [
+#             parse_contents(c, n) for c, n in
+#             zip(list_of_contents, list_of_names)]
+#         return children
+
+
+
+
+
+# Lecture du fichier choisit et mise à jour de la dropdown des variables cibles possibles --------------------------------------------------------------------------
+@app.callback(
+    Output(component_id='target_selection', component_property='value'),
+    Output(component_id='target_selection', component_property='options'),
+    Output(component_id='dataset', component_property='children'),
+    Output(component_id='num_variables', component_property='data'),
+    Input(component_id='file_selection', component_property='value'),
+)
+def FileSelection(file_path):
+    if file_path is None:
+        raise PreventUpdate
+    else:
+        if file_path.endswith('.csv'):
+            with open(r'%s' %file_path, "rb") as f:
+                msg = f.read()
+                firstline = f.readline()
+                detection = chardet.detect(msg)
+                encoding= detection["encoding"]
+            f.close()
+
+            with open(r'%s' %file_path) as f:
+                delimiter = detect(f.readline())
+                print(delimiter)
+            f.close()
+        
+            df = pd.read_csv(file_path,encoding=encoding,sep=delimiter)
+
+        elif file_path.endswith(('.xls','.xlsx')):
+            df = pd.read_excel(file_path)       
+
+        variables = df.columns.tolist()
+        num_variables = df.select_dtypes(include=np.number).columns.tolist()
+        table =dash_table.DataTable(
+                data=df.to_dict('records'),
+                columns=[{"name":i,"id":i} for i in df.columns],
+                fixed_rows={'headers': True},
+                page_size=20,
+                style_cell={'textAlign': 'left','minWidth': '180px', 'width': '180px', 'maxWidth': '180px'},
+                style_table={'height': '400px', 'overflowY': 'scroll','overflowX': 'scroll'},
+                style_header={'backgroundColor': 'dark','fontWeight': 'bold'}
+            )
+        return (None,[{'label':v, 'value':v} for v in variables],table,num_variables)
+
+# Chargement des variables pour les variables explicatives à sélectionner ---------------------------------------------------------
+@app.callback(
+        Output(component_id='features_selection', component_property='options'),
+        Output(component_id='features_selection', component_property='value'),
+        Input(component_id='target_selection', component_property='value'),
+        Input(component_id='target_selection', component_property='options')
+)
+def TargetSelection(target,options):
+    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné -------------------------------------------------------------
+    if target is None:
+        return ([{'label':"", 'value':""}],None)
+    else :
+        variables = [d['value'] for d in options]
+        return (
+            [{'label':v, 'value':v} for v in variables if v!=target],
+            [v for v in variables if v!=target]
+        )
+
+# Proposition du/des modèles qu'il est possible de sélectionner selon le type de la variable cible
+# @app.callback(
+#     Output('model_selection','options'),
+#     Input('features_selection','value'),
+# )
+# def model_selection(num_variables):
+#     return None
+
+
+# @app.callback(
+#     Output('test','children'),
+#     Input('file_selection','value'),
+#     Input('target_selection','value'),
+#     Input('features_selection','value')
+# )
+# def display(file_selection,target_selection,feature_selection):
+#     ctx=dash.callback_context
+
+#     ctx_msg = json.dumps({
+#         'states': ctx.states,
+#         'triggered': ctx.triggered,
+#         'inputs': ctx.inputs
+#     }, indent=2)
+ 
+#     return html.Div([
+#         html.Pre(ctx_msg)
+#     ])
+
 
 if __name__=='__main__':
     app.run_server(debug=True)
