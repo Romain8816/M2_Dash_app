@@ -17,9 +17,10 @@ import base64
 import io
 from detect_delimiter import detect
 import dash_daq as daq
+import cchardet as chardet
 #import dask.dataframe as dd
 
-from layout.layout import drag_and_drop, parse_contents, location_folder, dataset_selection, target_selection,features_selection,
+from layout.layout import drag_and_drop, parse_contents, location_folder, dataset_selection, target_selection,features_selection
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title="Machine Learning App"
@@ -29,6 +30,19 @@ form = dbc.Form([location_folder, dataset_selection,target_selection,features_se
 
 regression_models = ['Régression linéaire', 'Régression polynomiale', 'Régression lasso']
 classfication_models = ['Arbre de décision','SVM','KNN',"CAH","kmeans"]
+
+
+
+def allowed_files(path,extensions):
+    allowed_files=[]
+    for file in os.listdir(path):
+        if file.endswith(extensions):
+            allowed_files.append(file)
+        else:
+            continue
+    return allowed_files
+
+    
 
 app.layout = html.Div(children=[
         html.Div(
