@@ -246,8 +246,8 @@ def param_selection(norm,model,target,features,file):
 
         df = pd.read_csv(file,sep=delimiter)
 
-        print(target)
-        print(features)
+        #print(target)
+        #print(features)
 
         if model_selection == "kmeans":
             pass
