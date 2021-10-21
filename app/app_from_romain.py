@@ -239,12 +239,12 @@ def param_selection(norm,model,target,features,file):
 
     if file != None:
 
-        with open(data_path+file) as myfile:
+        with open(file) as myfile:
             firstline = myfile.readline()
         myfile.close()
-        deliminter = detect(firstline)
+        delimiter = detect(firstline)
 
-        df = pd.read_csv(data_path+file,sep=deliminter)
+        df = pd.read_csv(file,sep=delimiter)
 
         print(target)
         print(features)
