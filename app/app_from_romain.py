@@ -18,20 +18,21 @@ import io
 from detect_delimiter import detect
 import dash_daq as daq
 import cchardet as chardet
-#import dask.dataframe as dd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.metrics.cluster import adjusted_rand_score
+from sklearn.decomposition import PCA
 
-from layout.layout import drag_and_drop, parse_contents, location_folder, dataset_selection, target_selection,features_selection
+from layout.layout import drag_and_drop, build_kmeans, get_pandas_dataframe, parse_contents, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title="Machine Learning App"
 
-
 form = dbc.Form([location_folder, dataset_selection,target_selection,features_selection])
+form_kmeans_params_and_results = dbc.Form([kmeans_params_and_results])
 
 regression_models = ['Régression linéaire', 'Régression polynomiale', 'Régression lasso']
 classfication_models = ['Arbre de décision','SVM','KNN',"CAH","kmeans"]
-
-
 
 def allowed_files(path,extensions):
     allowed_files=[]
@@ -41,8 +42,6 @@ def allowed_files(path,extensions):
         else:
             continue
     return allowed_files
-
-    
 
 app.layout = html.Div(children=[
         html.Div(
@@ -81,20 +80,14 @@ app.layout = html.Div(children=[
             className='container-fluid'
         ),
         html.Br(),
-        html.Div(
-            dcc.Slider(
-            id='kmeans-nb-clust'
-        ),
-        className='container-fluid'
-        ),
+        form_kmeans_params_and_results,
         dcc.Store(id='num_variables')
 ])
-
 
 # Récupération de la liste des fichiers autorisés dans un répertoire renseigné par l'utilisateur---------------------------------------------------------------------------
 @app.callback(
     Output('file_selection','options'), # mise à jour de la liste des fichiers dans le répertoire
-    Input('validation_folder', 'n_clicks'), # valeur du bouton 
+    Input('validation_folder', 'n_clicks'), # valeur du bouton
     State(component_id="location_folder",component_property='value') #valeur de l'input
 )
 def update_files_list(n_clicks,data_path):
@@ -109,27 +102,10 @@ def update_files_list(n_clicks,data_path):
         except:
             return dash.no_update, '{} is prime!'.format(data_path)     ######################################/!\ Exception à reprendre
 
-        return ([{'label':f, 'value':(r'%s' %(data_path+'\\'+f))} for f in filtred_files])
+        # --- /!\ return ([{'label':f, 'value':(r'%s' %(data_path+'\\'+f))} for f in filtred_files]) # WINDOWS
+        return ([{'label':f, 'value':(r'%s' %(data_path+'/'+f))} for f in filtred_files]) # LINUX / MAC-OS
     else:
         raise PreventUpdate
-
-
-
-# Affichage du tableau après ajout d'un fichier. 
-# @app.callback(Output('output-data-upload', 'children'),
-#               Input('upload-data', 'contents'), # les données du fichier
-#               State('upload-data', 'filename'), # nom du fichier
-# ) 
-# def update_output(list_of_contents, list_of_names):
-#     if list_of_contents is not None:
-#         children = [
-#             parse_contents(c, n) for c, n in
-#             zip(list_of_contents, list_of_names)]
-#         return children
-
-
-
-
 
 # Lecture du fichier choisit et mise à jour de la dropdown des variables cibles possibles --------------------------------------------------------------------------
 @app.callback(
@@ -143,24 +119,7 @@ def FileSelection(file_path):
     if file_path is None:
         raise PreventUpdate
     else:
-        if file_path.endswith('.csv'):
-            with open(r'%s' %file_path, "rb") as f:
-                msg = f.read()
-                firstline = f.readline()
-                detection = chardet.detect(msg)
-                encoding= detection["encoding"]
-            f.close()
-
-            with open(r'%s' %file_path) as f:
-                delimiter = detect(f.readline())
-                print(delimiter)
-            f.close()
-        
-            df = pd.read_csv(file_path,encoding=encoding,sep=delimiter)
-
-        elif file_path.endswith(('.xls','.xlsx')):
-            df = pd.read_excel(file_path)       
-
+        df = get_pandas_dataframe(file_path)
         variables = df.columns.tolist()
         num_variables = df.select_dtypes(include=np.number).columns.tolist()
         table =dash_table.DataTable(
@@ -168,9 +127,14 @@ def FileSelection(file_path):
                 columns=[{"name":i,"id":i} for i in df.columns],
                 fixed_rows={'headers': True},
                 page_size=20,
+                sort_action='native',
+                sort_mode='single',
+                sort_by=[],
                 style_cell={'textAlign': 'left','minWidth': '180px', 'width': '180px', 'maxWidth': '180px'},
                 style_table={'height': '400px', 'overflowY': 'scroll','overflowX': 'scroll'},
-                style_header={'backgroundColor': 'dark','fontWeight': 'bold'}
+                style_header={'backgroundColor': 'dark','fontWeight': 'bold'},
+                style_cell_conditional=[
+                    {'if': {'column_id': c},'textAlign': 'center'} for c in df.columns],
             )
         return (None,[{'label':v, 'value':v} for v in variables],table,num_variables)
 
@@ -205,17 +169,16 @@ def TargetSelection(target,options,feature_selection_value):
                     [v for v in variables if v!=target]
                 )
 
-
 # Proposition du/des modèles qu'il est possible de sélectionner selon le type de la variable cible
 @app.callback(
-    Output('model_selection','options'),
-    Output('centrer_reduire','options'),
-    Input('num_variables','data'),
-    Input('target_selection','value'),
-    Input('features_selection','value'),
+    Output(component_id='model_selection',component_property='options'),
+    Output(component_id='centrer_reduire',component_property='options'),
+    Input(component_id='num_variables',component_property='data'),
+    Input(component_id='target_selection',component_property='value'),
+    Input(component_id='features_selection',component_property='value'),
     Input(component_id='file_selection', component_property='value'),
-    Input('model_selection','value'))
-def model_selection(num_variables,target_selection,feature_selection,file,selected_model):
+    Input(component_id='model_selection',component_property='value'))
+def ModelSelection(num_variables,target_selection,feature_selection,file,selected_model):
     if target_selection != None:
         if target_selection in num_variables:
                 return [{"label":v,"value":v} for v in regression_models],[{"label":"centrer réduire","value":"yes"}]
@@ -227,33 +190,99 @@ def model_selection(num_variables,target_selection,feature_selection,file,select
     else:
         raise PreventUpdate
 
+# Affichage des paramètres du modèle (pour le moment uniquement kmeans)
 @app.callback(
-    Output(component_id='kmeans-nb-clust', component_property='value'),
-    Input(component_id='centrer_reduire', component_property='value'),
-    Input(component_id='model_selection', component_property='value'),
-    Input('target_selection','value'),
-    Input('features_selection','value'),
-    Input(component_id='file_selection', component_property='value')
-)
-def param_selection(norm,model,target,features,file):
+    Output(component_id='kmeans-container',component_property='style'),
+    Output(component_id='n_clusters',component_property='value'),
+    Input(component_id='model_selection',component_property='value'),
+    Input(component_id='file_selection', component_property='value'),
+    Input(component_id='target_selection',component_property='value'))
+def ModelParameters(model,file_path,target):
+    if file_path is None:
+        raise PreventUpdate
+    else:
+        df = get_pandas_dataframe(file_path)
+        if model == "kmeans":
+            return {"margin":25,"display":"block"},len(set(list(df[target])))
+        else:
+            raise PreventUpdate
 
-    if file != None:
+@app.callback(
+    Output(component_id='kmeans-explore-object',component_property='options'),
+    Output(component_id='kmeans-explore-object',component_property='value'),
+    Input(component_id='model_selection',component_property='value'),
+    Input(component_id='file_selection', component_property='value'),
+    Input(component_id='target_selection',component_property='value'),
+    Input(component_id='features_selection',component_property='value'),
+    Input(component_id='n_clusters',component_property='value'),
+    Input(component_id='init',component_property='value'),
+    Input(component_id='n_init',component_property='value'),
+    Input(component_id='max_iter',component_property='value'),
+    Input(component_id='tol',component_property='value'),
+    Input(component_id='verbose',component_property='value'),
+    Input(component_id='random_state',component_property='value'),
+    Input(component_id='algorithm',component_property='value'),
+    Input(component_id='centrer_reduire',component_property='value'))
+def ShowModelAttributes(model,file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire):
+    if file_path is None:
+        raise PreventUpdate
+    else:
+        df = get_pandas_dataframe(file_path)
+        if model == "kmeans":
+            if random_state == "None":
+                random_state = None
+            kmeans = build_kmeans(df[features],n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire)
+            return [{"label":v,"value":v} for v in list(kmeans.__dict__.keys())+["randscore_"] if v.endswith("_")],"randscore_"
+        else:
+            raise PreventUpdate
 
-        with open(file) as myfile:
-            firstline = myfile.readline()
-        myfile.close()
-        delimiter = detect(firstline)
+@app.callback(
+    Output(component_id='kmeans-explore-object-display',component_property='children'),
+    Output(component_id='kmeans-pca',component_property='figure'),
+    Output(component_id='input-pca',component_property='figure'),
+    Input(component_id='model_selection',component_property='value'),
+    Input(component_id='file_selection', component_property='value'),
+    Input(component_id='target_selection',component_property='value'),
+    Input(component_id='features_selection',component_property='value'),
+    Input(component_id='n_clusters',component_property='value'),
+    Input(component_id='init',component_property='value'),
+    Input(component_id='n_init',component_property='value'),
+    Input(component_id='max_iter',component_property='value'),
+    Input(component_id='tol',component_property='value'),
+    Input(component_id='verbose',component_property='value'),
+    Input(component_id='random_state',component_property='value'),
+    Input(component_id='algorithm',component_property='value'),
+    Input(component_id='centrer_reduire',component_property='value'),
+    Input(component_id='kmeans-explore-object',component_property='value'),
+    Input('num_variables','data'))
+def ShowModelResults(model,file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire,kmeans_object_value,num_variables):
+    if file_path is None:
+        raise PreventUpdate
+    else:
+        df = get_pandas_dataframe(file_path)
+        if model == "kmeans":
+            if any(item in num_variables for item in features) == False:
+                df = pd.get_dummies(df)
+                features = list(df.column)
 
-        df = pd.read_csv(file,sep=delimiter)
-
-        #print(target)
-        #print(features)
-
-        if model_selection == "kmeans":
-            pass
-
-
-
+            if random_state == "None":
+                random_state = None
+            kmeans = build_kmeans(df[features],n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire)
+            #y = list(df[target].replace({"setosa":0,"versicolor":1,"virginica":2}))
+            setattr(kmeans, 'randscore_', adjusted_rand_score(kmeans.labels_,df[target]))
+            pca = PCA(n_components=2)
+            temp = pca.fit_transform(df[features])
+            coord = pd.DataFrame(temp,columns=["PCA1","PCA2"])
+            Y_pred = pd.DataFrame(list(map(str,kmeans.labels_)),columns=["kmeans_clusters"])
+            result = pd.concat([coord,Y_pred,df[target]], axis=1)
+            print(result)
+            fig_kmeans = px.scatter(result, x="PCA1", y="PCA2", color="kmeans_clusters", hover_data=['kmeans_clusters'],
+                             title="PCA du jeu de données {} colorié par clusters du KMeans".format(file_path.split("/")[-1]))
+            fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
+                             title="PCA du jeu de données {} colorié en fonction de la variable à prédire".format(file_path.split("/")[-1]))
+            return html.P("{}".format(getattr(kmeans, kmeans_object_value))),fig_kmeans,fig_input_data
+        else:
+            raise PreventUpdate
 
 # @app.callback(
 #     Output('test','children'),
@@ -269,11 +298,26 @@ def param_selection(norm,model,target,features,file):
 #         'triggered': ctx.triggered,
 #         'inputs': ctx.inputs
 #     }, indent=2)
- 
+
 #     return html.Div([
 #         html.Pre(ctx_msg)
 #     ])
 
+# Affichage du tableau après ajout d'un fichier.
+# @app.callback(Output('output-data-upload', 'children'),
+#               Input('upload-data', 'contents'), # les données du fichier
+#               State('upload-data', 'filename'), # nom du fichier
+# )
+# def update_output(list_of_contents, list_of_names):
+#     if list_of_contents is not None:
+#         children = [
+#             parse_contents(c, n) for c, n in
+#             zip(list_of_contents, list_of_names)]
+#         return children
+
+app.css.append_css({
+'external_url': './assets/style2.css' # LINUX - MAC-OS
+})
 
 if __name__=='__main__':
     app.run_server(debug=True)
