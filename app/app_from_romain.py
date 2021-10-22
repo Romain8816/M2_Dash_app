@@ -222,15 +222,23 @@ def ModelParameters(model,file_path,target):
     Input(component_id='verbose',component_property='value'),
     Input(component_id='random_state',component_property='value'),
     Input(component_id='algorithm',component_property='value'),
-    Input(component_id='centrer_reduire',component_property='value'))
-def ShowModelAttributes(model,file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire):
+    Input(component_id='centrer_reduire',component_property='value'),
+    Input('num_variables','data'))
+def ShowModelAttributes(model,file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire,num_variables):
     if file_path is None:
         raise PreventUpdate
     else:
         df = get_pandas_dataframe(file_path)
         if model == "kmeans":
+
+            if any(item not in num_variables for item in features) == True:
+                df_ = pd.get_dummies(df.loc[:, df.columns != target])
+                features = list(df_.columns)
+                df = pd.concat([df_,df[target]],axis=1)
+
             if random_state == "None":
                 random_state = None
+
             kmeans = build_kmeans(df[features],n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire)
             return [{"label":v,"value":v} for v in list(kmeans.__dict__.keys())+["randscore_"] if v.endswith("_")],"randscore_"
         else:
@@ -261,9 +269,10 @@ def ShowModelResults(model,file_path,target,features,n_clusters,init,n_init,max_
     else:
         df = get_pandas_dataframe(file_path)
         if model == "kmeans":
-            if any(item in num_variables for item in features) == False:
-                df = pd.get_dummies(df)
-                features = list(df.column)
+            if any(item not in num_variables for item in features) == True:
+                df_ = pd.get_dummies(df.loc[:, df.columns != target])
+                features = list(df_.columns)
+                df = pd.concat([df_,df[target]],axis=1)
 
             if random_state == "None":
                 random_state = None
@@ -275,7 +284,6 @@ def ShowModelResults(model,file_path,target,features,n_clusters,init,n_init,max_
             coord = pd.DataFrame(temp,columns=["PCA1","PCA2"])
             Y_pred = pd.DataFrame(list(map(str,kmeans.labels_)),columns=["kmeans_clusters"])
             result = pd.concat([coord,Y_pred,df[target]], axis=1)
-            print(result)
             fig_kmeans = px.scatter(result, x="PCA1", y="PCA2", color="kmeans_clusters", hover_data=['kmeans_clusters'],
                              title="PCA du jeu de données {} colorié par clusters du KMeans".format(file_path.split("/")[-1]))
             fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
