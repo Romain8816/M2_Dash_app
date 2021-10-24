@@ -194,7 +194,7 @@ kmeans_params_and_results = html.Div([
                 min=0,
                 max=10,
                 step=1,
-                value=5,
+                value=3,
                 tooltip={"placement": "bottom", "always_visible": True}
             ),
             html.Br(),

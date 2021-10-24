@@ -193,7 +193,7 @@ def ModelSelection(num_variables,target_selection,feature_selection,file,selecte
 # Affichage des paramètres du modèle (pour le moment uniquement kmeans)
 @app.callback(
     Output(component_id='kmeans-container',component_property='style'),
-    Output(component_id='n_clusters',component_property='value'),
+    #utput(component_id='n_clusters',component_property='value'),
     Input(component_id='model_selection',component_property='value'),
     Input(component_id='file_selection', component_property='value'),
     Input(component_id='target_selection',component_property='value'))
@@ -201,11 +201,15 @@ def ModelParameters(model,file_path,target):
     if file_path is None:
         raise PreventUpdate
     else:
-        df = get_pandas_dataframe(file_path)
-        if model == "kmeans":
-            return {"margin":25,"display":"block"},len(set(list(df[target])))
+        if target == None:
+            return {"margin":25,"display":"none"}
         else:
-            raise PreventUpdate
+            df = get_pandas_dataframe(file_path)
+            if model == "kmeans":
+                #return {"margin":25,"display":"block"},len(set(list(df[target])))
+                return {"margin":25,"display":"block"}
+            else:
+                raise PreventUpdate
 
 @app.callback(
     Output(component_id='kmeans-explore-object',component_property='options'),
@@ -231,6 +235,8 @@ def ShowModelAttributes(model,file_path,target,features,n_clusters,init,n_init,m
         df = get_pandas_dataframe(file_path)
         if model == "kmeans":
 
+            if features == None:
+                raise PreventUpdate
             if any(item not in num_variables for item in features) == True:
                 df_ = pd.get_dummies(df.loc[:, df.columns != target])
                 features = list(df_.columns)
@@ -269,6 +275,8 @@ def ShowModelResults(model,file_path,target,features,n_clusters,init,n_init,max_
     else:
         df = get_pandas_dataframe(file_path)
         if model == "kmeans":
+            if features == None:
+                raise PreventUpdate
             if any(item not in num_variables for item in features) == True:
                 df_ = pd.get_dummies(df.loc[:, df.columns != target])
                 features = list(df_.columns)
