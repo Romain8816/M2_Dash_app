@@ -19,79 +19,14 @@ from detect_delimiter import detect
 from sklearn.cluster import KMeans
 import dash_daq as daq
 from sklearn.preprocessing import StandardScaler
+from sklearn import svm
+
 
 # --- /!\ data_path = os.getcwd() +'\data\\' # WINDOWS
 data_path = os.getcwd() +'/data/' # LINUX - MAC-OS
 files = [f for f in os.listdir(r'%s' %data_path)]
 
-# Fonction qui permet d'instancier et fiter les modèles
-def build_kmeans(X,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire):
-    kmeans = KMeans(n_clusters=n_clusters,init=init,n_init=n_init,max_iter=max_iter,tol=tol,verbose=verbose,random_state=random_state,algorithm=algorithm)
-    if centrer_reduire != None:
-        scaler = StandardScaler()
-        X = scaler.fit_transform(X)
-    kmeans.fit(X)
-    return kmeans
-
-# Fonction qui permet de lire un fichier csv ou xls et qui retoune un pandas dataframe
-def get_pandas_dataframe(file_path):
-    if file_path.endswith('.csv'):
-        with open(r'%s' %file_path, "rb") as f:
-            msg = f.read()
-            firstline = f.readline()
-            detection = chardet.detect(msg)
-            encoding= detection["encoding"]
-        f.close()
-
-        with open(r'%s' %file_path) as f:
-            delimiter = detect(f.readline())
-        f.close()
-
-        df = pd.read_csv(file_path,encoding=encoding,sep=delimiter)
-
-    elif file_path.endswith(('.xls','.xlsx')):
-        df = pd.read_excel(file_path)
-
-    return df
-
-# (à supprimer ??) Fonction qui permet de lire un fichier csv ou xls et qui retoune un datatable
-def parse_contents(contents, filename):
-    with open(r'%s' %filename) as f:
-        delimiter = detect(f.readline())
-    f.close()
-    content_type, content_string = contents.split(delimiter)
-    decoded = base64.b64decode(content_string)
-    try:
-        if 'csv' in filename:
-            # Assume that the user uploaded a CSV file
-            df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-        elif 'xls' in filename:
-            # Assume that the user uploaded an excel file
-            df = pd.read_excel(io.BytesIO(decoded))
-    except Exception as e:
-        print(e)
-        return html.Div([
-            'Il y a eu une erreur dans le format du fichier.'
-        ])
-
-    return dbc.Col(
-        html.Div([
-        html.H5(filename),
-        dash_table.DataTable(
-            data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in df.columns],
-            fixed_rows={'headers': True},
-            page_size=20,
-            style_cell={'textAlign': 'left','minWidth': '180px', 'width': '180px', 'maxWidth': '180px'},
-            style_table={'height': '400px', 'overflowY': 'scroll','overflowX': 'scroll'},
-            style_header={'backgroundColor': 'dark','fontWeight': 'bold'}
-        ),
-        html.Hr(),  # horizontal line
-    ],className='container-fluid'),
-    width=10
-    )
-
-# Input pour définir le répertoire dans lequel on va choisir le fichier à analyser.
+# Input pour définir le répertoire de travail -----------------------------------------------------------------------------------------
 location_folder = dbc.Row(
     [
         dbc.Col(
@@ -107,7 +42,7 @@ location_folder = dbc.Row(
     ]
 )
 
-# Composant qui permet de déposer un ficher
+# Composant qui permet de déposer un ficher (le garder ou pas ?) -----------------------------------------------------------------------------------------------------------------
 drag_and_drop = dcc.Upload(
                     id='upload-data',
                     children=html.Div(['Drag and Drop or ',html.A('Select Files')]),
@@ -124,6 +59,8 @@ drag_and_drop = dcc.Upload(
                     multiple=True
 )
 
+
+# Dropdown pour sélectionner le fichier à analyser selon le répertoire de travail choisit -----------------------------------------------------------------------------
 dataset_selection = dbc.Row(
     [
         dbc.Label("Jeu de données sélectionné", html_for="file_selection", width=1,style={'font-weight': 'bold'}),
@@ -143,7 +80,7 @@ dataset_selection = dbc.Row(
     className="mb-3",
 )
 
-# Sélection de la variable cible
+# Dropdown pour sélectionner la variable cible --------------------------------------------------------------------------------------------------------
 target_selection = dbc.Row(
     [
         dbc.Label("Variable cible", html_for="target_selection", width=1,style={'color': 'red','font-weight': 'bold'}),
@@ -163,7 +100,7 @@ target_selection = dbc.Row(
 )
 
 
-# Sélection des variables explicatives
+# Dropdown pour sélection des variables explicatives ------------------------------------------------------------------------------------------------
 features_selection = dbc.Row(
     [
         dbc.Label("Variables explicatives", html_for="features_selection", width=1,style={'color': 'blue','font-weight': 'bold'}),
@@ -183,6 +120,103 @@ features_selection = dbc.Row(
     ],
     className="mb-3",
 )
+
+
+# Onglets pour les algos de classification ----------------------------------------------------------------------------------------------------------------
+classification_decision_tree = dbc.Card(
+    dbc.CardBody(
+        [
+            html.P("Arbre de décision", className="card-text"),
+            dbc.Button("Click here", color="success"),
+        ]
+    ),
+    className="mt-3",
+)
+
+classification_SVM = dbc.Card(
+    dbc.CardBody(
+        [
+            html.P("Support Vector Machine", className="card-text"),
+            dbc.Label("Type de noyau", html_for="kernel_selection", width=4,style={'font-weight': 'bold'}),
+            dcc.Dropdown(
+                id='kernel_selection',
+                options=[
+                    {'label': 'linéaire', 'value': 'linear'},
+                    {'label': 'polynomial', 'value': 'poly'},
+                    {'label': 'RBF', 'value': 'rbf'},
+                    {'label': 'Sigmoïde', 'value': 'sigmoid'},
+                ],
+                value = 'RBF'
+            ),
+            dbc.Label("Paramètre de régularisation", html_for="regularisation_selection", width=4,style={'font-weight': 'bold'}),
+            dcc.Slider(
+                id="regularisation_selection",
+                min=0.0,
+                max=100,
+                step=0.5,
+                value=0.1,
+                tooltip={"placement": "bottom", "always_visible": True},
+            ),
+            dbc.Button("Valider", color="danger"),
+        ]
+    ),
+    className="mt-3",
+)
+
+classification_KNN = dbc.Card(
+    dbc.CardBody(
+        [
+            html.P("KNN", className="card-text"),
+            dbc.Button("Don't click here", color="danger"),
+        ]
+    ),
+    className="mt-3",
+)
+
+classification_CAH = dbc.Card(
+    dbc.CardBody(
+        [
+            html.P("CAH", className="card-text"),
+            dbc.Button("Don't click here", color="danger"),
+        ]
+    ),
+    className="mt-3",
+)
+
+
+classification_Kmeans = dbc.Card(
+    dbc.CardBody(
+        [
+            html.P("Kmeans", className="card-text"),
+            dbc.Button("Don't click here", color="danger"),
+        ]
+    ),
+    className="mt-3",
+)
+
+
+classification_tabs = [
+    dbc.Tab(classification_decision_tree, label="Arbre de décision",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+    dbc.Tab(classification_SVM, label="SVM",tab_id ='svm',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+    dbc.Tab(classification_SVM, label="KNN",tab_id ='knn',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+    dbc.Tab(classification_SVM, label="CAH",tab_id ='cah',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+    dbc.Tab(classification_SVM, label ="Kmeans", tab_id='kmeans',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
+]
+
+regression_tabs = [
+    dbc.Tab(label="Régression linéaire",tab_id='reg_lin'),
+    dbc.Tab(label="Régression polynomiale",tab_id ='reg_poly'),
+    dbc.Tab(label="Régression lasso",tab_id ='reg_lasso'),
+
+]
+
+
+# Onglets pour les algos de régression -------------------------------------------------------------------------------------------------------
+
+
+
+
+
 
 kmeans_params_and_results = html.Div([
     html.Div([

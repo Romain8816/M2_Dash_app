@@ -3,6 +3,7 @@ from dash import dcc
 from dash import html
 from dash.development.base_component import Component
 import dash_bootstrap_components as dbc
+from dash_bootstrap_components._components.Collapse import Collapse
 from dash_bootstrap_components._components.Row import Row
 import plotly.express as px
 import pandas as pd
@@ -23,7 +24,10 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.decomposition import PCA
 
-from layout.layout import drag_and_drop, build_kmeans, get_pandas_dataframe, parse_contents, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results
+from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results, regression_tabs, classification_tabs
+from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
+from fonctions.algo_functions import build_kmeans
+
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title="Machine Learning App"
@@ -32,16 +36,8 @@ form = dbc.Form([location_folder, dataset_selection,target_selection,features_se
 form_kmeans_params_and_results = dbc.Form([kmeans_params_and_results])
 
 regression_models = ['Régression linéaire', 'Régression polynomiale', 'Régression lasso']
-classfication_models = ['Arbre de décision','SVM','KNN',"CAH","kmeans"]
-
-def allowed_files(path,extensions):
-    allowed_files=[]
-    for file in os.listdir(path):
-        if file.endswith(extensions):
-            allowed_files.append(file)
-        else:
-            continue
-    return allowed_files
+classification_models = ['Arbre de décision','SVM','KNN',"CAH","kmeans"]
+allowed_extensions =('.csv','.xlsx','.xls')
 
 app.layout = html.Div(children=[
         html.Div(
@@ -57,19 +53,24 @@ app.layout = html.Div(children=[
                 dbc.Row(
                     [
                         form,
-                        dbc.Col(
-                                html.Div(id='dataset'),width="100%"
-                            )
+                        dbc.Col(html.Div(id='dataset'),width="100%"),
+                        html.P(id='nrows',children="Nombre d'observation : ",className="mb-3"),
                     ]
                 )
-            ]
-            , className='container-fluid'
+            ], className='container-fluid'
         ),
         html.Div(id='output-data-upload'), # Affichage du tableau
         html.Div(
-            dbc.RadioItems(
-                id="model_selection",
-            ),
+            [
+                dbc.Collapse(
+                    id='collapse_tab',
+                    children=[dbc.Tabs(id='algo_tabs')],
+                    is_open=False
+                ),
+                dbc.RadioItems(
+                    id="model_selection",
+                ),
+            ],
             className='container-fluid'
         ),
         html.Br(),
@@ -91,7 +92,6 @@ app.layout = html.Div(children=[
     State(component_id="location_folder",component_property='value') #valeur de l'input
 )
 def update_files_list(n_clicks,data_path):
-    allowed_extensions =('.csv','.xlsx','.xls')
     # Si on a appuyer sur le bouton valider alors
     if n_clicks !=0:
         # On essaie de parcourir les fichiers dans le répertoire data_path
@@ -173,20 +173,38 @@ def TargetSelection(target,options,feature_selection_value):
 @app.callback(
     Output(component_id='model_selection',component_property='options'),
     Output(component_id='centrer_reduire',component_property='options'),
+    Output(component_id='algo_tabs',component_property='children'), #Choix des onglets possibles
+    Output(component_id='collapse_tab',component_property='is_open'),     #Affichage des onglets
+    Input(component_id='file_selection', component_property='value'), 
     Input(component_id='num_variables',component_property='data'),
     Input(component_id='target_selection',component_property='value'),
     Input(component_id='features_selection',component_property='value'),
-    Input(component_id='file_selection', component_property='value'),
-    Input(component_id='model_selection',component_property='value'))
-def ModelSelection(num_variables,target_selection,feature_selection,file,selected_model):
+    Input(component_id='model_selection',component_property='value')
+)
+def ModelSelection(file,num_variables,target_selection,feature_selection,selected_model):
+    # Si la variable cible à été sélectionné
     if target_selection != None:
+        # Si la variable est numérique
         if target_selection in num_variables:
-                return [{"label":v,"value":v} for v in regression_models],[{"label":"centrer réduire","value":"yes"}]
+                return (
+                    [{"label":v,"value":v} for v in regression_models],
+                    [{"label":"centrer réduire","value":"yes"}],
+                    regression_tabs,
+                    True
+                )
+
+        # Sinon (si la variable est qualitative)
         else:
             if selected_model == "Arbre de décision":
-                return [{"label":v,"value":v} for v in classfication_models],[]
+                return [{"label":v,"value":v} for v in classification_models],[]
             else:
-                return [{"label":v,"value":v} for v in classfication_models],[{"label":"centrer réduire","value":"yes"}]
+                return (
+                    [{"label":v,"value":v} for v in classification_models],
+                    [{"label":"centrer réduire","value":"yes"}],
+                    classification_tabs,
+                    True
+                ) 
+    # Sinon ne rien faire
     else:
         raise PreventUpdate
 
