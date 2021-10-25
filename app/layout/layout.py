@@ -145,8 +145,10 @@ classification_SVM = dbc.Card(
             value=0.3,
             tooltip={"placement": "bottom", "always_visible": True},
         ),
+        dbc.Label("Random seed", html_for="random_state", width=4,style={'font-weight': 'bold'}),
+        dbc.Input(id='random_state',type='number'),
         dbc.Label("Nombre de fold pour la validation croisée", html_for="k_fold", width=4,style={'font-weight': 'bold'}),
-        dbc.Input(id='k_fold',value=5),
+        dbc.Input(id='k_fold',value=5,type='number'),
         dbc.Label("Type de noyau (kernel)", html_for="kernel_selection", width=4,style={'font-weight': 'bold'}),
         dcc.Dropdown(
             id='kernel_selection',

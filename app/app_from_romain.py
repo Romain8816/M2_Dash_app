@@ -243,18 +243,20 @@ def ModelSelection(file,num_variables,target_selection,feature_selection,selecte
     State(component_id='target_selection',component_property='value'),
     State(component_id='features_selection',component_property='value'),
     State(component_id='test_size',component_property='value'),
+    State(component_id='random_state',component_property='value'),
     State(component_id='k_fold',component_property='value'),
     State(component_id='kernel_selection',component_property='value'),          # Noyau
     State(component_id='regularisation_selection',component_property='value'))  # C
 
-def score (n_clicks,file,target,features,test_size,k_fold,kernel,regularisation):
+def score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation):
     if (n_clicks == 0):
         PreventUpdate
     else:
+        print(random_state)
         df = get_pandas_dataframe(file)
         X= df[features]
         y= df[target]
-        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size)
+        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state)
         clf = svm.SVC(kernel=kernel,C=regularisation)
         clf.fit(X_train,y_train)
         y_pred = clf.predict(X_test)
