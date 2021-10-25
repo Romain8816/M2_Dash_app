@@ -233,6 +233,18 @@ def ModelSelection(file,num_variables,target_selection,feature_selection,selecte
     else:
         raise PreventUpdate
 
+
+########################################################################################################
+# (Stats descriptives)
+# @app.callback(
+#     Input('features_selection','value'),
+#     Input('target_selection','value'),
+#     Input('num_variables','data'),
+# )
+# def stats_descrip(features,target,num_var):
+#     return PreventUpdate
+
+
 ########################################################################################################
 # (SVM) 
 
@@ -252,7 +264,6 @@ def score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,re
     if (n_clicks == 0):
         PreventUpdate
     else:
-        print(random_state)
         df = get_pandas_dataframe(file)
         X= df[features]
         y= df[target]
@@ -404,8 +415,7 @@ def ShowModelResults(model,file_path,target,features,n_clusters,init,n_init,max_
 #             zip(list_of_contents, list_of_names)]
 #         return children
 
-app.css.append_css({
-'external_url': './assets/style2.css' # LINUX - MAC-OS
+app.css.append_css({'external_url': './assets/style2.css' # LINUX - MAC-OS
 })
 
 if __name__=='__main__':

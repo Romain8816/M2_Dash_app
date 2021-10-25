@@ -26,7 +26,8 @@ from sklearn.model_selection import cross_val_score, train_test_split
 data_path = os.getcwd() +'/data/' # LINUX - MAC-OS
 files = [f for f in os.listdir(r'%s' %data_path)]
 
-# Input pour définir le répertoire de travail -----------------------------------------------------------------------------------------
+########################################################################################################
+# (INIT) Input pour définir le répertoire de travail 
 location_folder = dbc.Row(
     [
         dbc.Col(
@@ -41,8 +42,8 @@ location_folder = dbc.Row(
         )
     ]
 )
-
-# Composant qui permet de déposer un ficher (le garder ou pas ?) -----------------------------------------------------------------------------------------------------------------
+########################################################################################################
+# Composant qui permet de déposer un ficher (le garder ou pas ?) 
 drag_and_drop = dcc.Upload(
                     id='upload-data',
                     children=html.Div(['Drag and Drop or ',html.A('Select Files')]),
@@ -59,8 +60,8 @@ drag_and_drop = dcc.Upload(
                     multiple=True
 )
 
-
-# Dropdown pour sélectionner le fichier à analyser selon le répertoire de travail choisit -----------------------------------------------------------------------------
+########################################################################################################
+# (INIT) Dropdown pour sélectionner le fichier à analyser selon le répertoire de travail choisit
 dataset_selection = dbc.Row(
     [
         dbc.Label("Jeu de données sélectionné", html_for="file_selection", width=1,style={'font-weight': 'bold'}),
@@ -80,7 +81,8 @@ dataset_selection = dbc.Row(
     className="mb-3",
 )
 
-# Dropdown pour sélectionner la variable cible --------------------------------------------------------------------------------------------------------
+########################################################################################################
+# (INIT) Dropdown pour sélectionner la variable cible
 target_selection = dbc.Row(
     [
         dbc.Label("Variable cible", html_for="target_selection", width=1,style={'color': 'red','font-weight': 'bold'}),
@@ -99,8 +101,8 @@ target_selection = dbc.Row(
     className="mb-3",
 )
 
-
-# Dropdown pour sélection des variables explicatives ------------------------------------------------------------------------------------------------
+########################################################################################################
+# (INIT) Dropdown pour sélection des variables explicatives 
 features_selection = dbc.Row(
     [
         dbc.Label("Variables explicatives", html_for="features_selection", width=1,style={'color': 'blue','font-weight': 'bold'}),
@@ -121,8 +123,10 @@ features_selection = dbc.Row(
     className="mb-3",
 )
 
+########################################################################################################
+# (Classification) Onglets 
 
-# Onglets pour les algos de classification ----------------------------------------------------------------------------------------------------------------
+# Arbre de décision
 classification_decision_tree = dbc.Card(
     dbc.CardBody(
         [
@@ -133,6 +137,7 @@ classification_decision_tree = dbc.Card(
     className="mt-3",
 )
 
+# SVM
 classification_SVM = dbc.Card(
     children=[
         html.P("Support Vector Machine", className="card-text"),
@@ -175,6 +180,7 @@ classification_SVM = dbc.Card(
     body=True
 )
 
+# KNN
 classification_KNN = dbc.Card(
     dbc.CardBody(
         [
@@ -185,6 +191,7 @@ classification_KNN = dbc.Card(
     className="mt-3",
 )
 
+# CAH
 classification_CAH = dbc.Card(
     dbc.CardBody(
         [
@@ -195,7 +202,7 @@ classification_CAH = dbc.Card(
     className="mt-3",
 )
 
-
+# KMeans
 classification_Kmeans = dbc.Card(
     dbc.CardBody(
         [
@@ -206,7 +213,7 @@ classification_Kmeans = dbc.Card(
     className="mt-3",
 )
 
-
+# Ensemble des onglets de classification
 classification_tabs = dbc.Tabs(
     id="classification_tab",
     children= [
@@ -217,6 +224,9 @@ classification_tabs = dbc.Tabs(
         dbc.Tab(label ="Kmeans", tab_id='kmeans',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
     ]
 )
+
+########################################################################################################
+# (Régression) Onglets
 
 regression_tabs = dbc.Tabs(
     id='regression_tabs',
