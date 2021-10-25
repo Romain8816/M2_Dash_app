@@ -20,7 +20,7 @@ from sklearn.cluster import KMeans
 import dash_daq as daq
 from sklearn.preprocessing import StandardScaler
 from sklearn import svm
-
+from sklearn.model_selection import cross_val_score, train_test_split
 
 # --- /!\ data_path = os.getcwd() +'\data\\' # WINDOWS
 data_path = os.getcwd() +'/data/' # LINUX - MAC-OS
@@ -134,33 +134,41 @@ classification_decision_tree = dbc.Card(
 )
 
 classification_SVM = dbc.Card(
-    dbc.CardBody(
-        [
-            html.P("Support Vector Machine", className="card-text"),
-            dbc.Label("Type de noyau", html_for="kernel_selection", width=4,style={'font-weight': 'bold'}),
-            dcc.Dropdown(
-                id='kernel_selection',
-                options=[
-                    {'label': 'linéaire', 'value': 'linear'},
-                    {'label': 'polynomial', 'value': 'poly'},
-                    {'label': 'RBF', 'value': 'rbf'},
-                    {'label': 'Sigmoïde', 'value': 'sigmoid'},
-                ],
-                value = 'RBF'
-            ),
-            dbc.Label("Paramètre de régularisation", html_for="regularisation_selection", width=4,style={'font-weight': 'bold'}),
-            dcc.Slider(
-                id="regularisation_selection",
-                min=0.0,
-                max=100,
-                step=0.5,
-                value=0.1,
-                tooltip={"placement": "bottom", "always_visible": True},
-            ),
-            dbc.Button("Valider", color="danger"),
-        ]
-    ),
-    className="mt-3",
+    children=[
+        html.P("Support Vector Machine", className="card-text"),
+        dbc.Label("Taille de l'échantillion de test (compris entre 0.0 et 1.0)", html_for="test_size", width=4,style={'font-weight': 'bold'}),
+        dcc.Slider(
+            id='test_size',
+            min=0.0,
+            max=1.0,
+            step=0.1,
+            value=0.3,
+            tooltip={"placement": "bottom", "always_visible": True},
+        ),
+        dbc.Label("Nombre de fold pour la validation croisée", html_for="k_fold", width=4,style={'font-weight': 'bold'}),
+        dbc.Input(id='k_fold',value=5),
+        dbc.Label("Type de noyau (kernel)", html_for="kernel_selection", width=4,style={'font-weight': 'bold'}),
+        dcc.Dropdown(
+            id='kernel_selection',
+            options=[
+                {'label': 'linéaire', 'value': 'linear'},
+                {'label': 'polynomial', 'value': 'poly'},
+                {'label': 'RBF', 'value': 'rbf'},
+                {'label': 'Sigmoïde', 'value': 'sigmoid'},
+            ],
+            value = 'rbf'
+        ),
+        dbc.Label("Paramètre de régularisation (C)", html_for="regularisation_selection", width=4,style={'font-weight': 'bold'}),
+        dcc.Slider(
+            id='regularisation_selection',
+            min=0.1,
+            max=100,
+            step=0.5,
+            value=0.1,
+            tooltip={"placement": "bottom", "always_visible": True},
+        ),
+    ],
+    body=True
 )
 
 classification_KNN = dbc.Card(
@@ -195,13 +203,16 @@ classification_Kmeans = dbc.Card(
 )
 
 
-classification_tabs = [
-    dbc.Tab(classification_decision_tree, label="Arbre de décision",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-    dbc.Tab(classification_SVM, label="SVM",tab_id ='svm',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-    dbc.Tab(classification_SVM, label="KNN",tab_id ='knn',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-    dbc.Tab(classification_SVM, label="CAH",tab_id ='cah',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-    dbc.Tab(classification_SVM, label ="Kmeans", tab_id='kmeans',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
-]
+classification_tabs = dbc.Tabs(
+    id="classification_tab",
+    children= [
+        dbc.Tab(label="Arbre de décision",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(label="SVM",tab_id ='svm',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(label="KNN",tab_id ='knn',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(label="CAH",tab_id ='cah',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(label ="Kmeans", tab_id='kmeans',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
+    ]
+)
 
 regression_tabs = [
     dbc.Tab(label="Régression linéaire",tab_id='reg_lin'),

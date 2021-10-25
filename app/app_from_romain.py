@@ -27,11 +27,15 @@ from sklearn.decomposition import PCA
 from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results, regression_tabs, classification_tabs
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
 from fonctions.algo_functions import build_kmeans
-
+from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn import svm
+from sklearn import metrics
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title="Machine Learning App"
 
+
+# VARIABLES 
 form = dbc.Form([location_folder, dataset_selection,target_selection,features_selection])
 form_kmeans_params_and_results = dbc.Form([kmeans_params_and_results])
 
@@ -39,6 +43,10 @@ regression_models = ['Régression linéaire', 'Régression polynomiale', 'Régre
 classification_models = ['Arbre de décision','SVM','KNN',"CAH","kmeans"]
 allowed_extensions =('.csv','.xlsx','.xls')
 
+
+
+#************************************************************************ MAIN LAYOUT **********************************************************************
+#***********************************************************************************************************************************************************
 app.layout = html.Div(children=[
         html.Div(
             [
@@ -85,7 +93,14 @@ app.layout = html.Div(children=[
         dcc.Store(id='num_variables')
 ])
 
-# Récupération de la liste des fichiers autorisés dans un répertoire renseigné par l'utilisateur---------------------------------------------------------------------------
+#*********************************************************************** CALLBACKS *************************************************************************
+#***********************************************************************************************************************************************************
+
+
+
+########################################################################################################
+# (INIT) RECUPERATION DE LA LISTE DES FICHIERS AUTORISES DANS LE REPERTOIRE RENSEIGNE
+
 @app.callback(
     Output('file_selection','options'), # mise à jour de la liste des fichiers dans le répertoire
     Input('validation_folder', 'n_clicks'), # valeur du bouton
@@ -100,14 +115,16 @@ def update_files_list(n_clicks,data_path):
             filtred_files=allowed_files(data_path,allowed_extensions)
         # Si le répertoire n'existe
         except:
-            return dash.no_update, '{} is prime!'.format(data_path)     ######################################/!\ Exception à reprendre
+            return dash.no_update, '{} is prime!'.format(data_path)    #/!\ Exception à reprendre
 
         # --- /!\ return ([{'label':f, 'value':(r'%s' %(data_path+'\\'+f))} for f in filtred_files]) # WINDOWS
         return ([{'label':f, 'value':(r'%s' %(data_path+'/'+f))} for f in filtred_files]) # LINUX / MAC-OS
     else:
         raise PreventUpdate
 
-# Lecture du fichier choisit et mise à jour de la dropdown des variables cibles possibles --------------------------------------------------------------------------
+########################################################################################################
+# (INIT) LECTURE DU FICHIER CHOISIT ET MAJ DE LA DROPDOWN DES VARIABLES CIBLES
+
 @app.callback(
     Output(component_id='target_selection', component_property='value'),
     Output(component_id='target_selection', component_property='options'),
@@ -138,7 +155,9 @@ def FileSelection(file_path):
             )
         return (None,[{'label':v, 'value':v} for v in variables],table,num_variables)
 
-# Chargement des variables pour les variables explicatives à sélectionner ---------------------------------------------------------
+########################################################################################################
+# (INIT) CHARGEMENT DES VARIABLES EXPLICATIVES A SELECTIONNER
+
 @app.callback(
         Output(component_id='features_selection', component_property='options'),
         Output(component_id='features_selection', component_property='value'),
@@ -147,7 +166,7 @@ def FileSelection(file_path):
         Input(component_id='features_selection', component_property='value')
 )
 def TargetSelection(target,options,feature_selection_value):
-    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné -------------------------------------------------------------
+    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné 
     if target is None:
         return ([{'label':"", 'value':""}],None)
     else :
@@ -168,8 +187,9 @@ def TargetSelection(target,options,feature_selection_value):
                     [{'label':v, 'value':v} for v in variables if v!=target],
                     [v for v in variables if v!=target]
                 )
+########################################################################################################
+# (INIT) Proposition du/des modèles qu'il est possible de sélectionner selon le type de la variable cible
 
-# Proposition du/des modèles qu'il est possible de sélectionner selon le type de la variable cible
 @app.callback(
     Output(component_id='model_selection',component_property='options'),
     Output(component_id='centrer_reduire',component_property='options'),
@@ -208,6 +228,38 @@ def ModelSelection(file,num_variables,target_selection,feature_selection,selecte
     else:
         raise PreventUpdate
 
+########################################################################################################
+# (SVM) Sauvegarde des paramètres dans une liste 
+
+@app.callback(
+    Output('res_svm','children'),
+    Input(component_id='file_selection',component_property='value'),
+    Input(component_id='target_selection',component_property='value'),
+    Input(component_id='features_selection',component_property='value'),
+    Input(component_id='test_size',component_property='value'),
+    Input(component_id='k_fold',component_property='value'),
+    Input(component_id='kernel_selection',component_property='value'),
+    Input(component_id='regularisation_selection',component_property='value')
+)
+def score (file,target,features,test_size,k_fold,kernel,regularisation):
+    df = get_pandas_dataframe(file)
+    X= df[[features]]
+    y= df[target]
+    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size)
+    clf = svm.SVC(kernel=kernel,C=regularisation)
+    clf.fit(X_train,y_train)
+    y_pred = clf.predict(X_test)
+    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+    return html.P() 
+
+
+
+
+
+
+
+
+########################################################################################################
 # Affichage des paramètres du modèle (pour le moment uniquement kmeans)
 @app.callback(
     Output(component_id='kmeans-container',component_property='style'),
