@@ -24,14 +24,15 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.decomposition import PCA
 
-from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results, regression_tabs, classification_tabs
+from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results
+from layout.layout import regression_tabs, classification_tabs
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
 from fonctions.algo_functions import build_kmeans
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn import svm
 from sklearn import metrics
 
-app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_callback_exceptions=True)
 app.title="Machine Learning App"
 
 
@@ -42,6 +43,8 @@ form_kmeans_params_and_results = dbc.Form([kmeans_params_and_results])
 regression_models = ['Régression linéaire', 'Régression polynomiale', 'Régression lasso']
 classification_models = ['Arbre de décision','SVM','KNN',"CAH","kmeans"]
 allowed_extensions =('.csv','.xlsx','.xls')
+
+
 
 
 
@@ -70,6 +73,7 @@ app.layout = html.Div(children=[
         html.Div(id='output-data-upload'), # Affichage du tableau
         html.Div(
             [
+                # Affichage des tabs, caché par défaut
                 dbc.Collapse(
                     id='collapse_tab',
                     is_open=False
@@ -161,6 +165,7 @@ def FileSelection(file_path):
 @app.callback(
         Output(component_id='features_selection', component_property='options'),
         Output(component_id='features_selection', component_property='value'),
+        #Output(component_id='collapse_tab', component_property='is_open'),
         Input(component_id='target_selection', component_property='value'),
         Input(component_id='target_selection', component_property='options'),
         Input(component_id='features_selection', component_property='value')
@@ -193,13 +198,13 @@ def TargetSelection(target,options,feature_selection_value):
 @app.callback(
     Output(component_id='model_selection',component_property='options'),
     Output(component_id='centrer_reduire',component_property='options'),
-    Output(component_id='algo_tabs',component_property='children'), #Choix des onglets possibles
-    Output(component_id='collapse_tab',component_property='is_open'),     #Affichage des onglets
-    Input(component_id='file_selection', component_property='value'), 
-    Input(component_id='num_variables',component_property='data'),
-    Input(component_id='target_selection',component_property='value'),
-    Input(component_id='features_selection',component_property='value'),
-    Input(component_id='model_selection',component_property='value')
+    Output(component_id='collapse_tab',component_property='children'),    # Tab de classification ou de régression
+    Output(component_id='collapse_tab',component_property='is_open'),     # Affichage des onglets
+    Input(component_id='file_selection', component_property='value'),     # Emplacement du fichier
+    Input(component_id='num_variables',component_property='data'),        # Liste des variables numérique
+    Input(component_id='target_selection',component_property='value'),    # Variable cible
+    Input(component_id='features_selection',component_property='value'),  # Variables explicatives
+    Input(component_id='model_selection',component_property='value')      # Model choisit. 
 )
 def ModelSelection(file,num_variables,target_selection,feature_selection,selected_model):
     # Si la variable cible à été sélectionné
@@ -229,28 +234,31 @@ def ModelSelection(file,num_variables,target_selection,feature_selection,selecte
         raise PreventUpdate
 
 ########################################################################################################
-# (SVM) Sauvegarde des paramètres dans une liste 
+# (SVM) 
 
 @app.callback(
     Output('res_svm','children'),
-    Input(component_id='file_selection',component_property='value'),
-    Input(component_id='target_selection',component_property='value'),
-    Input(component_id='features_selection',component_property='value'),
-    Input(component_id='test_size',component_property='value'),
-    Input(component_id='k_fold',component_property='value'),
-    Input(component_id='kernel_selection',component_property='value'),
-    Input(component_id='regularisation_selection',component_property='value')
-)
-def score (file,target,features,test_size,k_fold,kernel,regularisation):
-    df = get_pandas_dataframe(file)
-    X= df[[features]]
-    y= df[target]
-    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size)
-    clf = svm.SVC(kernel=kernel,C=regularisation)
-    clf.fit(X_train,y_train)
-    y_pred = clf.predict(X_test)
-    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    return html.P() 
+    Input('smv_button','n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State(component_id='test_size',component_property='value'),
+    State(component_id='k_fold',component_property='value'),
+    State(component_id='kernel_selection',component_property='value'),          # Noyau
+    State(component_id='regularisation_selection',component_property='value'))  # C
+
+def score (n_clicks,file,target,features,test_size,k_fold,kernel,regularisation):
+    if (n_clicks == 0):
+        PreventUpdate
+    else:
+        df = get_pandas_dataframe(file)
+        X= df[features]
+        y= df[target]
+        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size)
+        clf = svm.SVC(kernel=kernel,C=regularisation)
+        clf.fit(X_train,y_train)
+        y_pred = clf.predict(X_test)
+        return html.P("Accuracy: "+ str(metrics.accuracy_score(y_test, y_pred)))
 
 
 
@@ -294,6 +302,7 @@ def ModelParameters(model,file_path,target):
     Input(component_id='algorithm',component_property='value'),
     Input(component_id='centrer_reduire',component_property='value'),
     Input('num_variables','data'))
+
 def ShowModelAttributes(model,file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire,num_variables):
     if file_path is None:
         raise PreventUpdate

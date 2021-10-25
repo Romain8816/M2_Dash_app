@@ -167,6 +167,8 @@ classification_SVM = dbc.Card(
             value=0.1,
             tooltip={"placement": "bottom", "always_visible": True},
         ),
+         dbc.Button("Valider", color="danger",id='smv_button',n_clicks=0),
+         html.Div(id='res_svm')
     ],
     body=True
 )
@@ -196,7 +198,7 @@ classification_Kmeans = dbc.Card(
     dbc.CardBody(
         [
             html.P("Kmeans", className="card-text"),
-            dbc.Button("Don't click here", color="danger"),
+            dbc.Button("Don't click here", color="danger")
         ]
     ),
     className="mt-3",
@@ -207,26 +209,24 @@ classification_tabs = dbc.Tabs(
     id="classification_tab",
     children= [
         dbc.Tab(label="Arbre de décision",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-        dbc.Tab(label="SVM",tab_id ='svm',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(classification_SVM,label="SVM",tab_id ='svm',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
         dbc.Tab(label="KNN",tab_id ='knn',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
         dbc.Tab(label="CAH",tab_id ='cah',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
         dbc.Tab(label ="Kmeans", tab_id='kmeans',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
     ]
 )
 
-regression_tabs = [
-    dbc.Tab(label="Régression linéaire",tab_id='reg_lin'),
-    dbc.Tab(label="Régression polynomiale",tab_id ='reg_poly'),
-    dbc.Tab(label="Régression lasso",tab_id ='reg_lasso'),
-
-]
+regression_tabs = dbc.Tabs(
+    id='regression_tabs',
+    children = [
+        dbc.Tab(label="Régression linéaire",tab_id='reg_lin'),
+        dbc.Tab(label="Régression polynomiale",tab_id ='reg_poly'),
+        dbc.Tab(label="Régression lasso",tab_id ='reg_lasso')
+    ]
+)
 
 
 # Onglets pour les algos de régression -------------------------------------------------------------------------------------------------------
-
-
-
-
 
 
 kmeans_params_and_results = html.Div([
