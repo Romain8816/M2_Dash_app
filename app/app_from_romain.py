@@ -72,9 +72,9 @@ app.layout = html.Div(children=[
             [
                 dbc.Collapse(
                     id='collapse_tab',
-                    children=[dbc.Tabs(id='algo_tabs')],
                     is_open=False
                 ),
+
                 dbc.RadioItems(
                     id="model_selection",
                 ),
