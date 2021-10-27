@@ -288,7 +288,7 @@ def stats_descrip(file,features,target,num_var):
     State(component_id='svm_regularisation_selection',component_property='value'),  # C
     State(component_id='svm_epsilon',component_property='value'))
 
-def score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon):
+def build_svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon):
 
     if (n_clicks == 0):
         PreventUpdate
@@ -310,13 +310,13 @@ def score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,re
                                                 (categorical_pipeline,categorical_features))
 
         model = make_pipeline(preprocessor,svm.SVR(kernel=kernel,C=regularisation,epsilon=epsilon))
-        score = cross_val_score(model,X_train,y_train)
+        score = cross_val_score(model,X_train,y_train,cv=k_fold)
 
         model.fit(X_train,y_train)
 
         y_pred = model.predict(X_test)
         
-        return html.P("R² moyen : "+ str(score.mean()) )
+        return html.P("Valeur du R² en moyenne pour "+ str(k_fold) + " folds : "+str(score.mean()) )
 
 
 
