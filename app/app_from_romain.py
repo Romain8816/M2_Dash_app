@@ -168,9 +168,9 @@ def FileSelection(file_path):
         Output(component_id='features_selection', component_property='options'),
         Output(component_id='features_selection', component_property='value'),
         #Output(component_id='collapse_tab', component_property='is_open'),
-        Input(component_id='target_selection', component_property='value'),
-        Input(component_id='target_selection', component_property='options'),
-        Input(component_id='features_selection', component_property='value')
+        Input(component_id='target_selection', component_property='value'),   # valeur de la variable cible
+        Input(component_id='target_selection', component_property='options'), # liste des variables cibles
+        Input(component_id='features_selection', component_property='value')  # valeur des variables explicatives. 
 )
 def TargetSelection(target,options,feature_selection_value):
     # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné 
@@ -178,6 +178,7 @@ def TargetSelection(target,options,feature_selection_value):
         return ([{'label':"", 'value':""}],None)
     else :
         variables = [d['value'] for d in options]
+        print(variables)
         if feature_selection_value == None:
             return (
                 [{'label':v, 'value':v} for v in variables if v!=target],
