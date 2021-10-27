@@ -6,6 +6,7 @@ from dash.development.base_component import Component
 import dash_bootstrap_components as dbc
 from dash_bootstrap_components._components.Collapse import Collapse
 from dash_bootstrap_components._components.Row import Row
+from numpy.core.numeric import cross
 from numpy.random.mtrand import random_integers
 import plotly.express as px
 import pandas as pd
@@ -22,7 +23,7 @@ from detect_delimiter import detect
 import dash_daq as daq
 import cchardet as chardet
 from scipy.sparse.construct import rand, random
-from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 from sklearn.cluster import KMeans
 from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.decomposition import PCA
@@ -34,6 +35,9 @@ from fonctions.algo_functions import build_kmeans
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn import svm
 from sklearn import metrics
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.compose import make_column_transformer, make_column_selector
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_callback_exceptions=True)
 app.title="Machine Learning App"
@@ -230,7 +234,8 @@ def ModelSelection(file,num_variables,target_selection,feature_selection,selecte
             ) 
     # Sinon ne rien faire
     else:
-        raise PreventUpdate
+        return ([],"",False)
+        #raise PreventUpdate
 
 
 ########################################################################################################
@@ -279,22 +284,40 @@ def stats_descrip(file,features,target,num_var):
     State(component_id='test_size',component_property='value'),
     State(component_id='random_state',component_property='value'),
     State(component_id='k_fold',component_property='value'),
-    State(component_id='kernel_selection',component_property='value'),          # Noyau
-    State(component_id='regularisation_selection',component_property='value'))  # C
+    State(component_id='svm_kernel_selection',component_property='value'),          # Noyau
+    State(component_id='svm_regularisation_selection',component_property='value'),  # C
+    State(component_id='svm_epsilon',component_property='value'))
 
-def score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation):
+def score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon):
 
     if (n_clicks == 0):
         PreventUpdate
     else:
         df = get_pandas_dataframe(file)
+
         X= df[features]
         y= df[target]
+
         X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state)
-        clf = svm.SVC(kernel=kernel,C=regularisation)
-        clf.fit(X_train,y_train)
-        y_pred = clf.predict(X_test)
-        return html.P("Accuracy: "+ str(metrics.accuracy_score(y_test, y_pred) ) )
+
+        numerical_features = make_column_selector(dtype_include=np.number)
+        categorical_features = make_column_selector(dtype_exclude=np.number)
+
+        categorical_pipeline = make_pipeline(SimpleImputer(strategy='most_frequent'),OneHotEncoder(drop='first',sparse=False))
+        numerical_pipeline = make_pipeline(SimpleImputer(),StandardScaler())
+
+        preprocessor = make_column_transformer((numerical_pipeline,numerical_features),
+                                                (categorical_pipeline,categorical_features))
+
+        model = make_pipeline(preprocessor,svm.SVR(kernel=kernel,C=regularisation,epsilon=epsilon))
+        score = cross_val_score(model,X_train,y_train)
+
+        model.fit(X_train,y_train)
+
+        y_pred = model.predict(X_test)
+        
+        return html.P("R² moyen : "+ str(score.mean()) )
+
 
 
 
