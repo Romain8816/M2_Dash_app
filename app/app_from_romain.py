@@ -6,6 +6,7 @@ from dash.development.base_component import Component
 import dash_bootstrap_components as dbc
 from dash_bootstrap_components._components.Collapse import Collapse
 from dash_bootstrap_components._components.Row import Row
+from matplotlib import lines
 from numpy.core.numeric import cross
 from numpy.random.mtrand import random_integers
 import plotly.express as px
@@ -27,17 +28,22 @@ from sklearn.pipeline import make_pipeline
 from sklearn.cluster import KMeans
 from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.decomposition import PCA
-
-from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results
-from layout.layout import regression_tabs, classification_tabs
-from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
-from fonctions.algo_functions import build_kmeans
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn import svm
 from sklearn import metrics
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.compose import make_column_transformer, make_column_selector
+from sklearn.model_selection import validation_curve
+
+from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results
+from layout.layout import regression_tabs, classification_tabs
+from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
+from fonctions.algo_functions import build_kmeans, build_smv
+import matplotlib.pyplot as plt
+from plotly import tools as tls
+import plotly.graph_objects as go
+
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_callback_exceptions=True)
 app.title="Machine Learning App"
@@ -288,7 +294,7 @@ def stats_descrip(file,features,target,num_var):
     State(component_id='svm_regularisation_selection',component_property='value'),  # C
     State(component_id='svm_epsilon',component_property='value'))
 
-def build_svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon):
+def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon):
 
     if (n_clicks == 0):
         PreventUpdate
@@ -300,23 +306,23 @@ def build_svm (n_clicks,file,target,features,test_size,random_state,k_fold,kerne
 
         X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state)
 
-        numerical_features = make_column_selector(dtype_include=np.number)
-        categorical_features = make_column_selector(dtype_exclude=np.number)
-
-        categorical_pipeline = make_pipeline(SimpleImputer(strategy='most_frequent'),OneHotEncoder(drop='first',sparse=False))
-        numerical_pipeline = make_pipeline(SimpleImputer(),StandardScaler())
-
-        preprocessor = make_column_transformer((numerical_pipeline,numerical_features),
-                                                (categorical_pipeline,categorical_features))
-
-        model = make_pipeline(preprocessor,svm.SVR(kernel=kernel,C=regularisation,epsilon=epsilon))
+        model = build_smv(kernel,regularisation,epsilon)
         score = cross_val_score(model,X_train,y_train,cv=k_fold)
 
         model.fit(X_train,y_train)
-
         y_pred = model.predict(X_test)
+
+        train_score, val_score = validation_curve(model,X_train,y_train,param_name='C',param_range=np.arange(0,100),cv=k_fold)
         
-        return html.P("Valeur du R² en moyenne pour "+ str(k_fold) + " folds : "+str(score.mean()) )
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(x=k, y=val_score.mean(axis=1),mode='lines',name='cross-validation score'))
+        fig.add_trace(go.Scatter(x=k, y=train_score.mean(axis=1),mode='lines',name='training score'))
+
+        return [
+                    html.P("Valeur du R² en moyenne pour "+ str(k_fold) + " folds : "+str(score.mean()) ),
+                    dcc.Graph(figure=fig)
+                ]
 
 
 

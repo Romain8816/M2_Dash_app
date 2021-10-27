@@ -22,6 +22,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn import svm
 from sklearn.model_selection import cross_val_score, train_test_split
 
+
+
+
 # --- /!\ data_path = os.getcwd() +'\data\\' # WINDOWS
 data_path = os.getcwd() +'/data/' # LINUX - MAC-OS
 files = [f for f in os.listdir(r'%s' %data_path)]
