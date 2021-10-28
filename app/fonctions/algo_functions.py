@@ -56,8 +56,8 @@ def build_smv(kernel,regularisation,epsilon):
     preprocessor = make_column_transformer((numerical_pipeline,numerical_features),
                                             (categorical_pipeline,categorical_features))
 
-    model = make_pipeline(preprocessor,SVR(svr__kernel = kernel, svr__C = regularisation,svr__epsilon = epsilon))
+    model = make_pipeline(preprocessor,SVR(kernel=kernel,C=regularisation,epsilon=epsilon))
 
-    print(sorted(model.get_params().keys()))
+    #print(sorted(model.get_params().keys()))
 
     return model

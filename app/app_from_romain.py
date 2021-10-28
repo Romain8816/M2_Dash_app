@@ -186,7 +186,7 @@ def TargetSelection(target,options,feature_selection_value):
         return ([{'label':"", 'value':""}],None)
     else :
         variables = [d['value'] for d in options]
-        print(variables)
+        #print(variables)
         if feature_selection_value == None:
             return (
                 [{'label':v, 'value':v} for v in variables if v!=target],
@@ -310,16 +310,17 @@ def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regu
         model.fit(X_train,y_train)
         y_pred = model.predict(X_test)
 
-        train_score, val_score = validation_curve(model,X_train,y_train,param_name='C',param_range=np.arange(0,100),cv=k_fold)
+        # train_score, val_score = validation_curve(model,X_train,y_train,param_name='svr__C',param_range=np.arange(0,100),cv=k_fold)
         
-        fig = go.Figure()
+        # fig = go.Figure()
 
-        fig.add_trace(go.Scatter(x=k, y=val_score.mean(axis=1),mode='lines',name='cross-validation score'))
-        fig.add_trace(go.Scatter(x=k, y=train_score.mean(axis=1),mode='lines',name='training score'))
+        # fig.add_trace(go.Scatter(x=np.arange(0,100), y=val_score.mean(axis=1),mode='lines',name='validation score'))
+        # fig.add_trace(go.Scatter(x=np.arange(0,100), y=train_score.mean(axis=1),mode='lines',name='training score'))
+        # fig.update_layout(title="Score en fonction de C")
 
         return [
                     html.P("Valeur du R² en moyenne pour "+ str(k_fold) + " folds : "+str(score.mean()) ),
-                    dcc.Graph(figure=fig)
+                    #dcc.Graph(figure=fig)
                 ]
 
 
