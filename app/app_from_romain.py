@@ -6,7 +6,6 @@ from dash.development.base_component import Component
 import dash_bootstrap_components as dbc
 from dash_bootstrap_components._components.Collapse import Collapse
 from dash_bootstrap_components._components.Row import Row
-from matplotlib import lines
 from numpy.core.numeric import cross
 from numpy.random.mtrand import random_integers
 import plotly.express as px
@@ -40,7 +39,6 @@ from layout.layout import drag_and_drop, location_folder, dataset_selection, tar
 from layout.layout import regression_tabs, classification_tabs
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
 from fonctions.algo_functions import build_kmeans, build_smv
-import matplotlib.pyplot as plt
 from plotly import tools as tls
 import plotly.graph_objects as go
 
