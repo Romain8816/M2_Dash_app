@@ -11,6 +11,7 @@ import os
 import pandas as pd
 import json
 from dash.exceptions import PreventUpdate
+from sklearn.tree import DecisionTreeClassifier
 from dash import dash_table
 import numpy as np
 import base64
@@ -42,3 +43,10 @@ def build_kmeans(X,kmeans_n_clusters,kmeans_init,kmeans_n_init,
 def build_smv(X,param):
     clf = svm.SVC() # Linear Kernel
     clf.set_params()
+
+def build_tree(X,y,criterion, splitter, max_depth, min_samples_split, min_samples_leaf, max_leaf_nodes):
+    tree = DecisionTreeClassifier(criterion=criterion, splitter=splitter, max_depth=max_depth, min_samples_split=min_samples_split,
+                                  min_samples_leaf=min_samples_leaf,max_leaf_nodes=max_leaf_nodes)
+    tree.fit(X,y)
+
+    return tree

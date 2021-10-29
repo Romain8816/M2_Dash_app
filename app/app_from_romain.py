@@ -26,9 +26,17 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.decomposition import PCA
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score,precision_score,recall_score,roc_curve,auc
 
-from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection #, kmeans_params_and_results
+#from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection #, kmeans_params_and_results
+#from layout.layout import regression_tabs, classification_tabs
+from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results
 from layout.layout import regression_tabs, classification_tabs
+from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
+from fonctions.algo_functions import build_kmeans,build_tree
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
 from fonctions.algo_functions import build_kmeans
 from sklearn.model_selection import cross_val_score, train_test_split
@@ -37,6 +45,8 @@ from sklearn import metrics
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_callback_exceptions=True)
 app.title="Machine Learning App"
+
+
 
 
 # VARIABLES
@@ -347,6 +357,173 @@ def ShowModelAttributes(n_clicks,file_path,target,features,n_clusters,init,n_ini
 def ShowKmeansObjectAttributes(kmeans_object_value):
     print(kmeans_object_value)
     return html.P(kmeans_object_value)
+
+
+classification_decision_tree = dbc.Card(
+    children = [
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.H4(html.B("Paramètres pour la méthode des arbres de décison")),
+                            html.Hr(),html.Br(),
+                            html.B("criterion : ")," ",
+                            dcc.Dropdown(
+                                id='criterion',
+                                options=[
+                                    {'label': 'gini', 'value': 'gini'},
+                                    {'label': 'entropy', 'value': 'entropy'}
+                                ],
+                                value='gini'
+                            ),
+                            html.Br(),
+                            html.B("splitter : "),"",
+                            dcc.Dropdown(
+                                id='splitter',
+                                options=[
+                                    {'label':'best','value':'best'},
+                                    {'label':'random','value':'random'}],
+                                value="best",
+                            ),
+                            html.Br(),
+                            html.B("max_depth : "),"",
+                            dcc.Input(
+                                id='max_depth',
+                                type='number',
+                                min=0,
+                                max=10,
+                                value=0,
+                            ),
+                            html.Br(),
+                            html.B("min_samples_split : "),"",
+                            html.Br(),
+                            dcc.Input(
+                                id='min_samples_split',
+                                type="number",
+                                value=2,
+                                max=10,
+                                min=1
+                            ),
+                            html.Br(),
+                            html.B("min_samples_leaf : "),"",
+                            dcc.Input(
+                                id='min_samples_leaf',
+                                type='number',
+                                min=1,
+                                max=10,
+                                value=1
+                            ),
+                            html.Br(),
+                            html.B("max_leaf_nodes : "),"",
+                            dcc.Input(
+                                id='max_leaf_nodes',
+                                type='number',
+                                max=10,
+                                min=0,
+                                value=0
+                            ),
+                            html.Br(),
+                            dbc.Button("Valider", color="danger",id='tree_button',n_clicks=0)
+                        ],className="six columns",
+
+                    ),
+                    html.Br(),
+                    html.Br(),
+                    html.Div
+                        (
+                            [
+                                html.H4(html.B("Exploration des résultats")),
+                                html.Hr(),html.Br(),
+                                dcc.Dropdown(
+                                    id="diff_metric",
+                                    options=[
+                                        {"label":"accuracy","value":"accuracy"},
+                                        {"label":"f1 score","value":"f1_macro"},
+                                        {"label":"recall","value":"recall_macro"},
+                                        {"label":"precision","value":"precision_macro"}],
+                                    value="accuracy"),
+                                html.Br(),
+                                html.Div(id='print_result_metric'),
+                                #html.Br(),
+                                #dcc.Graph(id='courbe_roc',style={'width': '90vh', 'height': '90vh'}),
+                                #html.Br(),
+                                #dcc.Graph(id='input-pca',style={'width': '90vh', 'height': '90vh'})
+                            ], className="six columns"
+                        ),
+                ],
+            ),
+        ],
+    #body=True
+)
+
+@app.callback(
+    Output(component_id='print_result_metric', component_property='children'),
+    #Output(component_id='courbe_roc', component_property='children'),
+    Input('tree_button','n_clicks'),
+    [State('model_selection','value'),
+    State('target_selection','value'),
+    State('features_selection','value'),
+    State('file_selection','value'),
+    State('criterion','value'),
+    State('splitter','value'),
+    State('max_depth','value'),
+    State('min_samples_split','value'),
+    State('min_samples_leaf','value'),
+    State('max_leaf_nodes','value'),
+    State('diff_metric','value')])
+def update_result_tree(n_clicks,model,target,feature,file,criterion,splitter,max_depth,min_samples_split,min_samples_leaf,max_leaf_nodes,metric):
+    #creation du dataframe
+
+    if n_clicks == 0:
+        print(n_clicks)
+        raise PreventUpdate
+    else :
+        print(n_clicks)
+        df = get_pandas_dataframe(file)
+        print(df.head(10))
+        #on le fait que si model == arbre decison
+
+            # prendre en compte le parametre None
+        if max_depth == 0:
+            max_depth = None
+        if max_leaf_nodes == 0:
+            max_leaf_nodes = None
+
+        # separt en test et apprentissage
+        X = df.loc[:,feature]
+        y = df.loc[:,target]
+
+        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size = 0.3, random_state=0)
+        print(X_train)
+        #creation du model
+        tree = build_tree(X_train, y_train, criterion, splitter, max_depth, min_samples_split,min_samples_leaf,max_leaf_nodes)
+
+        cross_val = cross_val_score(tree, X,y,cv=5,scoring=metric)
+        # retour la moyenne des métrics choisi
+        moy = np.mean(cross_val) # sert de prédiction
+
+        """
+        #affichage de la courbe roc
+        y_score = tree.predict_proba(X_test)
+        fp,vp, thresholds = roc_curve(y_test, y_score[:,1])
+        #d = pd.DataFrame([fp,vp],columns=["Fp","Vp"])
+
+        fig_roc = px.area(
+            x=fp, y=vp,
+            title=f'ROC Curve (AUC={auc(fp, vp):.4f})',
+            labels=dict(x='False Positive Rate', y='True Positive Rate'),
+            width=700, height=500
+        )
+        fig_roc.add_shape(
+            type='line', line=dict(dash='dash'),
+            x0=0, x1=1, y0=0, y1=1
+        )
+        """
+        print(moy)
+        return html.P('Résult {}'.format(str(moy)))
+
+
+
 
 """
 @app.callback(
