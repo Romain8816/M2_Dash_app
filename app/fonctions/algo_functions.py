@@ -59,5 +59,5 @@ def build_smv(kernel,regularisation,epsilon):
     model = make_pipeline(preprocessor,SVR(kernel=kernel,C=regularisation,epsilon=epsilon))
 
     #print(sorted(model.get_params().keys()))
-
+    #print(sorted(model.metrics.SCORERS.keys()))
     return model

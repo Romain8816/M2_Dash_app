@@ -3,6 +3,7 @@ from dash import dcc
 from dash import html
 import dash_bootstrap_components as dbc
 from dash_bootstrap_components._components.Row import Row
+from numpy.core.fromnumeric import size
 import plotly.express as px
 import pandas as pd
 from dash.dependencies import Input,Output,State
@@ -286,50 +287,109 @@ classification_tabs = dbc.Tabs(
 # SVM
 regression_svm = dbc.Card(
     children=[
-        html.P("Support Vector Machine", className="card-text"),
-        dbc.Label("Taille de l'échantillion de test (compris entre 0.0 et 1.0)", html_for="test_size",style={'font-weight': 'bold'}),
-        dcc.Slider(
-            id='test_size',
-            min=0.0,
-            max=1.0,
-            step=0.1,
-            value=0.3,
-            tooltip={"placement": "bottom", "always_visible": True},
+        html.Div(
+            dbc.Row(
+                [
+                    html.P("Support Vector Machine", className="card-text"),
+                    dbc.Col(
+                        dbc.Label("Taille de l'échantillion de test (compris entre 0.0 et 1.0)", html_for="test_size",style={'font-weight': 'bold'}),
+                        width=3
+                    ),
+                    dbc.Col(
+                        dcc.Slider(
+                            id='test_size',
+                            min=0.0,
+                            max=1.0,
+                            step=0.1,
+                            value=0.3,
+                            tooltip={"placement": "bottom", "always_visible": True},
+                            #className="col-sm-6 col-md-5 col-lg-4",# Taille de la slider sur 3 colonnes 
+                        ),width=3
+                    )
+                ]
+            ),
         ),
-        dbc.Label("Random seed", html_for="random_state",style={'font-weight': 'bold'}),
-        dcc.Input(id='random_state',type='number'),
-        dbc.Label("K-folds ", html_for="k_fold",style={'font-weight': 'bold'}),
-        dcc.Input(id='k_fold',value=5,type='number'),
-        dbc.Label("Type de noyau (kernel)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
-        dcc.Dropdown(
-            id='svm_kernel_selection',
-            options=[
-                {'label': 'linéaire', 'value': 'linear'},
-                {'label': 'polynomial', 'value': 'poly'},
-                {'label': 'RBF', 'value': 'rbf'},
-                {'label': 'Sigmoïde', 'value': 'sigmoid'},
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dbc.Label("Random seed", html_for="random_state",style={'font-weight': 'bold'}),
+                        dbc.Input(id='random_state',type='number'),
+                    ],width=2,
+                ),
+                dbc.Col(
+                    [
+                        dbc.Label("K-folds ", html_for="k_fold",style={'font-weight': 'bold'}),
+                        dbc.Input(id='k_fold',value=5,type='number'),
+                    ],width=2,
+                )
             ],
-            value = 'rbf'
         ),
-        dbc.Label("Paramètre de régularisation (C)", html_for="svm_regularisation_selection",style={'font-weight': 'bold'}),
-        dcc.Input(
-            id='svm_regularisation_selection',
-            type='number',
-            min=0,
-            max=100,
-            step=0.1,
-            value=0.1,
+        html.Br(),html.Br(),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dbc.Label("Type de noyau (kernel)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
+                        dcc.Dropdown(
+                            id='svm_kernel_selection',
+                            options=[
+                                {'label': 'linéaire', 'value': 'linear'},
+                                {'label': 'polynomial', 'value': 'poly'},
+                                {'label': 'RBF', 'value': 'rbf'},
+                                {'label': 'Sigmoïde', 'value': 'sigmoid'},
+                            ],
+                            value = 'rbf'
+                        ),
+                    ],width=2
+                ),
+                dbc.Col(
+                    [
+                        dbc.Label("Degré (pour noyau polynomial)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
+                        dbc.Input(
+                            id='svm_degre',
+                            type='number',
+                            min=0,
+                            max=4,
+                            step=1,
+                            value=0,
+                            ),
+                    ],width=2
+                )
+            ]
         ),
-        dbc.Label("Epsilon (ε)",html_for='svm_epsilon',style={'font-weight': 'bold'}),
-        dcc.Input(
-            id='svm_epsilon',
-            type='number',
-            value=0.1,
-            min=0,
-            max=100,
-            step=0.1
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dbc.Label("Régularisation (C)", html_for="svm_regularisation_selection",style={'font-weight': 'bold'}),
+                        dbc.Input(
+                            id='svm_regularisation_selection',
+                            type='number',
+                            min=0,
+                            max=100,
+                            step=0.1,
+                            value=0.1,
+                        ),
+                    ],width=2,
+                ),
+                dbc.Col(
+                    [
+                        dbc.Label("Epsilon (ε)",html_for='svm_epsilon',style={'font-weight': 'bold'}),
+                        dbc.Input(
+                            id='svm_epsilon',
+                            type='number',
+                            value=0.1,
+                            min=0,
+                            max=100,
+                            step=0.1,
+                            #className="col-2"
+                        ),
+                    ],width=2,
+                )
+            ]
         ),
-        html.Br(),
+        html.Br(),html.Br(),
         dbc.Button("Valider", color="danger",id='smv_button',n_clicks=0),
         html.Div(id='res_svm')
     ],

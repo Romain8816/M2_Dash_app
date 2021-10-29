@@ -27,7 +27,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.cluster import KMeans
 from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.decomposition import PCA
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.model_selection import cross_val_score, train_test_split, cross_validate
 from sklearn import svm
 from sklearn import metrics
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -305,11 +305,15 @@ def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regu
         X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state)
 
         model = build_smv(kernel,regularisation,epsilon)
-        score = cross_val_score(model,X_train,y_train,cv=k_fold)
+        score = cross_validate(model,X_train,y_train,cv=k_fold,scoring=('r2','neg_mean_squared_error'),return_train_score=True)
+
+        rsquared = score['test_r2'].mean()
+        mse = score['test_neg_mean_squared_error'].mean()
 
         model.fit(X_train,y_train)
         y_pred = model.predict(X_test)
-
+        
+        
         # train_score, val_score = validation_curve(model,X_train,y_train,param_name='svr__C',param_range=np.arange(0,100),cv=k_fold)
         
         # fig = go.Figure()
@@ -318,8 +322,14 @@ def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regu
         # fig.add_trace(go.Scatter(x=np.arange(0,100), y=train_score.mean(axis=1),mode='lines',name='training score'))
         # fig.update_layout(title="Score en fonction de C")
 
-        return [
-                    html.P("Valeur du R² en moyenne pour "+ str(k_fold) + " folds : "+str(score.mean()) ),
+        return [    
+                    html.Div(
+                        [
+                            dbc.Label("Validation score"),
+                            html.P('R² : '+str(rsquared)),
+                            html.P('MSE : '+str(mse))
+                        ]
+                    )
                     #dcc.Graph(figure=fig)
                 ]
 
