@@ -27,18 +27,18 @@ def train_test(X,y,test_size):
     X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size)
     return None
 
-
-
 # Fonction qui permet d'instancier et fiter les modèles
-def build_kmeans(X,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire):
-    kmeans = KMeans(n_clusters=n_clusters,init=init,n_init=n_init,max_iter=max_iter,tol=tol,verbose=verbose,random_state=random_state,algorithm=algorithm)
-    if centrer_reduire != None:
-        scaler = StandardScaler()
-        X = scaler.fit_transform(X)
+
+# KMEANS
+def build_kmeans(X,kmeans_n_clusters,kmeans_init,kmeans_n_init,
+                kmeans_max_iter,kmeans_tol,kmeans_verbose,
+                kmeans_random_state,kmeans_algorithm):
+    kmeans = KMeans(n_clusters=kmeans_n_clusters,init=kmeans_init,n_init=kmeans_n_init,max_iter=kmeans_max_iter,
+                    tol=kmeans_tol,verbose=kmeans_verbose,random_state=kmeans_random_state,algorithm=kmeans_algorithm)
     kmeans.fit(X)
     return kmeans
 
-
+# SVM
 def build_smv(X,param):
     clf = svm.SVC() # Linear Kernel
     clf.set_params()

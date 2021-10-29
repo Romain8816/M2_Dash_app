@@ -27,7 +27,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.decomposition import PCA
 
-from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results
+from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection #, kmeans_params_and_results
 from layout.layout import regression_tabs, classification_tabs
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
 from fonctions.algo_functions import build_kmeans
@@ -39,9 +39,9 @@ app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_ca
 app.title="Machine Learning App"
 
 
-# VARIABLES 
+# VARIABLES
 form = dbc.Form([location_folder, dataset_selection,target_selection,features_selection])
-form_kmeans_params_and_results = dbc.Form([kmeans_params_and_results])
+#form_kmeans_params_and_results = dbc.Form([kmeans_params_and_results])
 
 regression_models = ['Régression linéaire', 'Régression polynomiale', 'Régression lasso']
 classification_models = ['Arbre de décision','SVM','KNN',"CAH","kmeans"]
@@ -59,7 +59,7 @@ app.layout = html.Div(children=[
                 html.H6('Master SISE (2021-2022)',style={'color':'white','font-weight':'bold'})
             ],className='container-fluid top'
         ),
-        drag_and_drop,
+        #drag_and_drop,
         html.Div(
             [
                 dbc.Row(
@@ -97,7 +97,7 @@ app.layout = html.Div(children=[
         ),
         html.Br(),
         html.Br(),
-        form_kmeans_params_and_results,
+        #form_kmeans_params_and_results,
         dcc.Store(id='num_variables')
 ])
 
@@ -170,15 +170,14 @@ def FileSelection(file_path):
         #Output(component_id='collapse_tab', component_property='is_open'),
         Input(component_id='target_selection', component_property='value'),   # valeur de la variable cible
         Input(component_id='target_selection', component_property='options'), # liste des variables cibles
-        Input(component_id='features_selection', component_property='value')  # valeur des variables explicatives. 
+        Input(component_id='features_selection', component_property='value')  # valeur des variables explicatives.
 )
 def TargetSelection(target,options,feature_selection_value):
-    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné 
+    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné
     if target is None:
         return ([{'label':"", 'value':""}],None)
     else :
         variables = [d['value'] for d in options]
-        print(variables)
         if feature_selection_value == None:
             return (
                 [{'label':v, 'value':v} for v in variables if v!=target],
@@ -208,7 +207,7 @@ def TargetSelection(target,options,feature_selection_value):
     Input(component_id='num_variables',component_property='data'),        # Liste des variables numérique
     Input(component_id='target_selection',component_property='value'),    # Variable cible
     Input(component_id='features_selection',component_property='value'),  # Variables explicatives
-    Input(component_id='model_selection',component_property='value')      # Model choisit. 
+    Input(component_id='model_selection',component_property='value')      # Model choisit.
 )
 def ModelSelection(file,num_variables,target_selection,feature_selection,selected_model):
     # Si la variable cible à été sélectionné
@@ -227,7 +226,7 @@ def ModelSelection(file,num_variables,target_selection,feature_selection,selecte
                 [{"label":"centrer réduire","value":"yes"}],
                 classification_tabs,
                 True
-            ) 
+            )
     # Sinon ne rien faire
     else:
         raise PreventUpdate
@@ -250,7 +249,7 @@ def stats_descrip(file,features,target,num_var):
         df = get_pandas_dataframe(file)
         #X= df[features]
         #y= df[target]
-        if target not in num_var : 
+        if target not in num_var :
             return dcc.Graph(
                 figure = {
                     'data':[
@@ -268,7 +267,7 @@ def stats_descrip(file,features,target,num_var):
 
 
 ########################################################################################################
-# (SVM) 
+# (SVM)
 
 @app.callback(
     Output('res_svm','children'),
@@ -296,12 +295,218 @@ def score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,re
         y_pred = clf.predict(X_test)
         return html.P("Accuracy: "+ str(metrics.accuracy_score(y_test, y_pred) ) )
 
+########################################################################################################
+# (KMEANS)
+
+@app.callback(
+    Output(component_id='kmeans_explore_object',component_property='options'),
+    Output(component_id='kmeans_pca',component_property='figure'),
+    Output(component_id='kmeans_input_pca',component_property='figure'),
+    Input(component_id='kmeans_button',component_property='n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State(component_id='kmeans_n_clusters',component_property='value'),
+    State(component_id='kmeans_init',component_property='value'),
+    State(component_id='kmeans_n_init',component_property='value'),
+    State(component_id='kmeans_max_iter',component_property='value'),
+    State(component_id='kmeans_tol',component_property='value'),
+    State(component_id='kmeans_verbose',component_property='value'),
+    State(component_id='kmeans_random_state',component_property='value'),
+    State(component_id='kmeans_algorithm',component_property='value'),
+    State(component_id='num_variables',component_property='data'))
+def ShowModelAttributes(n_clicks,file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,num_variables):
+    if (n_clicks == 0):
+        raise PreventUpdate
+    else:
+        if file_path is None:
+            raise PreventUpdate
+        else:
+            df = get_pandas_dataframe(file_path)
+            if any(item not in num_variables for item in features) == True:
+                df_ = pd.get_dummies(df.loc[:, df.columns != target])
+                features = list(df_.columns)
+                df = pd.concat([df_,df[target]],axis=1)
+            if random_state == "None":
+                random_state = None
+            kmeans = build_kmeans(df[features],n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm)
+            pca = PCA(n_components=2)
+            temp = pca.fit_transform(df[features])
+            coord = pd.DataFrame(temp,columns=["PCA1","PCA2"])
+            Y_pred = pd.DataFrame(list(map(str,kmeans.labels_)),columns=["kmeans_clusters"])
+            result = pd.concat([coord,Y_pred,df[target]], axis=1)
+            fig_kmeans = px.scatter(result, x="PCA1", y="PCA2", color="kmeans_clusters", hover_data=['kmeans_clusters'],
+                             title="PCA du jeu de données {} colorié par clusters du KMeans".format(file_path.split("/")[-1]))
+            fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
+                             title="PCA du jeu de données {} colorié en fonction de la variable à prédire".format(file_path.split("/")[-1]))
+            return [{"label":v,"value":"{}".format(getattr(kmeans,v))} for v in list(kmeans.__dict__.keys()) if v.endswith("_")],fig_kmeans,fig_input_data
+
+@app.callback(
+    Output(component_id='kmeans_explore_object_display',component_property='children'),
+    Input(component_id='kmeans_explore_object',component_property='value'))
+def ShowKmeansObjectAttributes(kmeans_object_value):
+    print(kmeans_object_value)
+    return html.P(kmeans_object_value)
+
+"""
+@app.callback(
+    Output(component_id='kmeans_explore_object_display',component_property='children'),
+    Output(component_id='kmeans_pca',component_property='figure'),
+    Output(component_id='kmeans_input_pca',component_property='figure'),
+    Input(component_id='file_selection', component_property='value'),
+    Input(component_id='target_selection',component_property='value'),
+    Input(component_id='features_selection',component_property='value'),
+    Input(component_id='kmeans_n_clusters',component_property='value'),
+    Input(component_id='kmeans_init',component_property='value'),
+    Input(component_id='kmeans_n_init',component_property='value'),
+    Input(component_id='kmeans_max_iter',component_property='value'),
+    Input(component_id='kmeans_tol',component_property='value'),
+    Input(component_id='kmeans_verbose',component_property='value'),
+    Input(component_id='kmeans_random_state',component_property='value'),
+    Input(component_id='kmeans_algorithm',component_property='value'),
+    Input(component_id='kmeans_explore_object',component_property='value'),
+    Input('num_variables','data'))
+def ShowModelResults(file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,kmeans_object_value,num_variables):
+    if file_path is None:
+        raise PreventUpdate
+    else:
+        df = get_pandas_dataframe(file_path)
+        #if model == "kmeans":
+        if features == None:
+            raise PreventUpdate
+        if any(item not in num_variables for item in features) == True:
+            df_ = pd.get_dummies(df.loc[:, df.columns != target])
+            features = list(df_.columns)
+            df = pd.concat([df_,df[target]],axis=1)
+
+        #if len(centrer_reduire) == 2:
+        #    scaler = StandardScaler()
+        #    df[features] = scaler.fit_transform(df[features])
+
+        if random_state == "None":
+            random_state = None
+        kmeans = build_kmeans(df[features],n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm)
+        #y = list(df[target].replace({"setosa":0,"versicolor":1,"virginica":2}))
+        setattr(kmeans, 'randscore_', adjusted_rand_score(kmeans.labels_,df[target]))
+        pca = PCA(n_components=2)
+        temp = pca.fit_transform(df[features])
+        coord = pd.DataFrame(temp,columns=["PCA1","PCA2"])
+        Y_pred = pd.DataFrame(list(map(str,kmeans.labels_)),columns=["kmeans_clusters"])
+        result = pd.concat([coord,Y_pred,df[target]], axis=1)
+        fig_kmeans = px.scatter(result, x="PCA1", y="PCA2", color="kmeans_clusters", hover_data=['kmeans_clusters'],
+                         title="PCA du jeu de données {} colorié par clusters du KMeans".format(file_path.split("/")[-1]))
+        fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
+                         title="PCA du jeu de données {} colorié en fonction de la variable à prédire".format(file_path.split("/")[-1]))
+        return html.P("{}".format(getattr(kmeans, kmeans_object_value))),fig_kmeans,fig_input_data
+        #else:
+        #    raise PreventUpdate
 
 
 
 
+@app.callback(
+    Output(component_id='kmeans-explore-object',component_property='options'),
+    Output(component_id='kmeans-explore-object',component_property='value'),
+    Input(component_id='model_selection',component_property='value'),
+    Input(component_id='file_selection', component_property='value'),
+    Input(component_id='target_selection',component_property='value'),
+    Input(component_id='features_selection',component_property='value'),
+    Input(component_id='n_clusters',component_property='value'),
+    Input(component_id='init',component_property='value'),
+    Input(component_id='n_init',component_property='value'),
+    Input(component_id='max_iter',component_property='value'),
+    Input(component_id='tol',component_property='value'),
+    Input(component_id='verbose',component_property='value'),
+    Input(component_id='kmeans_random_state',component_property='value'),
+    Input(component_id='algorithm',component_property='value'),
+    Input(component_id='centrer_reduire',component_property='value'),
+    Input('num_variables','data'))
+def ShowModelAttributes(model,file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire,num_variables):
+    if file_path is None:
+        raise PreventUpdate
+    else:
+        df = get_pandas_dataframe(file_path)
 
+        #if model == "kmeans":
 
+        if features == None:
+            raise PreventUpdate
+        if any(item not in num_variables for item in features) == True:
+            df_ = pd.get_dummies(df.loc[:, df.columns != target])
+            features = list(df_.columns)
+            df = pd.concat([df_,df[target]],axis=1)
+
+        #print(centrer_reduire)
+        #print(len(centrer_reduire))
+        #if len(centrer_reduire) == 2:
+        #    scaler = StandardScaler()
+        #    df[features] = scaler.fit_transform(df[features])
+        #    print(df)
+        #else:
+        #    print(df)
+
+        if random_state == "None":
+            random_state = None
+
+        kmeans = build_kmeans(df[features],n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm)
+        return [{"label":v,"value":v} for v in list(kmeans.__dict__.keys())+["randscore_"] if v.endswith("_")],"randscore_"
+    #else:
+    #    raise PreventUpdate
+
+@app.callback(
+    Output(component_id='kmeans-explore-object-display',component_property='children'),
+    Output(component_id='kmeans-pca',component_property='figure'),
+    Output(component_id='input-pca',component_property='figure'),
+    Input(component_id='model_selection',component_property='value'),
+    Input(component_id='file_selection', component_property='value'),
+    Input(component_id='target_selection',component_property='value'),
+    Input(component_id='features_selection',component_property='value'),
+    Input(component_id='n_clusters',component_property='value'),
+    Input(component_id='init',component_property='value'),
+    Input(component_id='n_init',component_property='value'),
+    Input(component_id='max_iter',component_property='value'),
+    Input(component_id='tol',component_property='value'),
+    Input(component_id='verbose',component_property='value'),
+    Input(component_id='random_state',component_property='value'),
+    Input(component_id='algorithm',component_property='value'),
+    Input(component_id='centrer_reduire',component_property='value'),
+    Input(component_id='kmeans-explore-object',component_property='value'),
+    Input('num_variables','data'))
+def ShowModelResults(model,file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire,kmeans_object_value,num_variables):
+    if file_path is None:
+        raise PreventUpdate
+    else:
+        df = get_pandas_dataframe(file_path)
+        #if model == "kmeans":
+        if features == None:
+            raise PreventUpdate
+        if any(item not in num_variables for item in features) == True:
+            df_ = pd.get_dummies(df.loc[:, df.columns != target])
+            features = list(df_.columns)
+            df = pd.concat([df_,df[target]],axis=1)
+
+        #if len(centrer_reduire) == 2:
+        #    scaler = StandardScaler()
+        #    df[features] = scaler.fit_transform(df[features])
+
+        if random_state == "None":
+            random_state = None
+        kmeans = build_kmeans(df[features],n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm)
+        #y = list(df[target].replace({"setosa":0,"versicolor":1,"virginica":2}))
+        setattr(kmeans, 'randscore_', adjusted_rand_score(kmeans.labels_,df[target]))
+        pca = PCA(n_components=2)
+        temp = pca.fit_transform(df[features])
+        coord = pd.DataFrame(temp,columns=["PCA1","PCA2"])
+        Y_pred = pd.DataFrame(list(map(str,kmeans.labels_)),columns=["kmeans_clusters"])
+        result = pd.concat([coord,Y_pred,df[target]], axis=1)
+        fig_kmeans = px.scatter(result, x="PCA1", y="PCA2", color="kmeans_clusters", hover_data=['kmeans_clusters'],
+                         title="PCA du jeu de données {} colorié par clusters du KMeans".format(file_path.split("/")[-1]))
+        fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
+                         title="PCA du jeu de données {} colorié en fonction de la variable à prédire".format(file_path.split("/")[-1]))
+        return html.P("{}".format(getattr(kmeans, kmeans_object_value))),fig_kmeans,fig_input_data
+        #else:
+        #    raise PreventUpdate
+"""
 
 ########################################################################################################
 # Affichage des paramètres du modèle (pour le moment uniquement kmeans)
