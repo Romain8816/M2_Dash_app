@@ -23,28 +23,27 @@ import dash_daq as daq
 import cchardet as chardet
 from scipy.sparse.construct import rand, random
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
 from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.decomposition import PCA
-
-from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results
+from statistics import *
+from layout.layout import location_folder, dataset_selection, target_selection,features_selection
 from layout.layout import regression_tabs, classification_tabs
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
-from fonctions.algo_functions import build_kmeans
+from fonctions.algo_functions import *
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn import svm
 from sklearn import metrics
+from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score
+from sklearn.metrics import roc_curve
+from matplotlib import pyplot
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_callback_exceptions=True)
 app.title="Machine Learning App"
 
 
-# VARIABLES 
+# VARIABLES
 form = dbc.Form([location_folder, dataset_selection,target_selection,features_selection])
-form_kmeans_params_and_results = dbc.Form([kmeans_params_and_results])
 
-regression_models = ['Régression linéaire', 'Régression polynomiale', 'Régression lasso']
-classification_models = ['Arbre de décision','SVM','KNN',"CAH","kmeans"]
 allowed_extensions =('.csv','.xlsx','.xls')
 
 
@@ -59,7 +58,6 @@ app.layout = html.Div(children=[
                 html.H6('Master SISE (2021-2022)',style={'color':'white','font-weight':'bold'})
             ],className='container-fluid top'
         ),
-        drag_and_drop,
         html.Div(
             [
                 dbc.Row(
@@ -67,7 +65,7 @@ app.layout = html.Div(children=[
                         form,
                         html.Br(),
                         dbc.Col(html.Div(id='dataset'),width="100%"),
-                        html.P(id='nrows',children="Nombre d'observation : ",className="mb-3"),
+                        html.P(id='nrows',children="",className="mb-3"),
                     ]
                 )
             ], className='container-fluid'
@@ -97,7 +95,6 @@ app.layout = html.Div(children=[
         ),
         html.Br(),
         html.Br(),
-        form_kmeans_params_and_results,
         dcc.Store(id='num_variables')
 ])
 
@@ -170,15 +167,14 @@ def FileSelection(file_path):
         #Output(component_id='collapse_tab', component_property='is_open'),
         Input(component_id='target_selection', component_property='value'),   # valeur de la variable cible
         Input(component_id='target_selection', component_property='options'), # liste des variables cibles
-        Input(component_id='features_selection', component_property='value')  # valeur des variables explicatives. 
+        Input(component_id='features_selection', component_property='value')  # valeur des variables explicatives.
 )
 def TargetSelection(target,options,feature_selection_value):
-    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné 
+    # On commence d'abord par traiter le cas lorsque l'utilisateur n'a rien sélectionné
     if target is None:
         return ([{'label':"", 'value':""}],None)
     else :
         variables = [d['value'] for d in options]
-        print(variables)
         if feature_selection_value == None:
             return (
                 [{'label':v, 'value':v} for v in variables if v!=target],
@@ -208,7 +204,7 @@ def TargetSelection(target,options,feature_selection_value):
     Input(component_id='num_variables',component_property='data'),        # Liste des variables numérique
     Input(component_id='target_selection',component_property='value'),    # Variable cible
     Input(component_id='features_selection',component_property='value'),  # Variables explicatives
-    Input(component_id='model_selection',component_property='value')      # Model choisit. 
+    Input(component_id='model_selection',component_property='value')      # Model choisit.
 )
 def ModelSelection(file,num_variables,target_selection,feature_selection,selected_model):
     # Si la variable cible à été sélectionné
@@ -227,7 +223,7 @@ def ModelSelection(file,num_variables,target_selection,feature_selection,selecte
                 [{"label":"centrer réduire","value":"yes"}],
                 classification_tabs,
                 True
-            ) 
+            )
     # Sinon ne rien faire
     else:
         raise PreventUpdate
@@ -250,7 +246,7 @@ def stats_descrip(file,features,target,num_var):
         df = get_pandas_dataframe(file)
         #X= df[features]
         #y= df[target]
-        if target not in num_var : 
+        if target not in num_var :
             return dcc.Graph(
                 figure = {
                     'data':[
@@ -268,7 +264,7 @@ def stats_descrip(file,features,target,num_var):
 
 
 ########################################################################################################
-# (SVM) 
+# (SVM)
 
 @app.callback(
     Output('res_svm','children'),
@@ -296,149 +292,136 @@ def score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,re
         y_pred = clf.predict(X_test)
         return html.P("Accuracy: "+ str(metrics.accuracy_score(y_test, y_pred) ) )
 
-
-
-
-
-
-
-
 ########################################################################################################
-# Affichage des paramètres du modèle (pour le moment uniquement kmeans)
-# @app.callback(
-#     Output(component_id='kmeans-container',component_property='style'),
-#     Output(component_id='n_clusters',component_property='value'),
-#     Input(component_id='model_selection',component_property='value'),
-#     Input(component_id='file_selection', component_property='value'),
-#     Input(component_id='target_selection',component_property='value'))
-# def ModelParameters(model,file_path,target):
-#     if file_path is None:
-#         raise PreventUpdate
-#     else:
-#         df = get_pandas_dataframe(file_path)
-#         if model == "kmeans":
-#             return {"margin":25,"display":"block"},len(set(list(df[target])))
-#         else:
-#             raise PreventUpdate
+# (KNeighborsClassifier)
 
-# @app.callback(
-#     Output(component_id='kmeans-explore-object',component_property='options'),
-#     Output(component_id='kmeans-explore-object',component_property='value'),
-#     Input(component_id='model_selection',component_property='value'),
-#     Input(component_id='file_selection', component_property='value'),
-#     Input(component_id='target_selection',component_property='value'),
-#     Input(component_id='features_selection',component_property='value'),
-#     Input(component_id='n_clusters',component_property='value'),
-#     Input(component_id='init',component_property='value'),
-#     Input(component_id='n_init',component_property='value'),
-#     Input(component_id='max_iter',component_property='value'),
-#     Input(component_id='tol',component_property='value'),
-#     Input(component_id='verbose',component_property='value'),
-#     Input(component_id='random_state',component_property='value'),
-#     Input(component_id='algorithm',component_property='value'),
-#     Input(component_id='centrer_reduire',component_property='value'),
-#     Input('num_variables','data'))
+# GridSearchCV
+@app.callback(
+    Output(component_id='res_KNeighborsClassifier_GridSearchCV',component_property='children'),
+    Output(component_id="ls-loading-output-1", component_property="children"),
+    Input(component_id='KNeighborsClassifier_button_GridSearchCV',component_property='n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State(component_id='num_variables',component_property='data'),
+    State(component_id='KNeighborsClassifier_centrer_reduire',component_property='value'),
+    State(component_id='KNeighborsClassifier_GridSearchCV_number_of_folds',component_property='value'),
+    State(component_id='KNeighborsClassifier_GridSearchCV_scoring',component_property='value'),
+    State(component_id='KNeighborsClassifier_GridSearchCV_njobs',component_property='value'))
+def GridSearchCV_score(n_clicks,file,target,features,num_variables,centrer_reduire,GridSearchCV_number_of_folds,GridSearchCV_scoring,njobs):
+    if (n_clicks == 0):
+        return "",""
+    else:
+        if njobs == "None":
+            njobs = None
+        df = get_pandas_dataframe(file)
+        check_type_heterogeneity = all(element in num_variables for element in features)
+        if check_type_heterogeneity == False:
+            bin = binariser(df=df,features=features,target=target)
+            df = bin[0]
+            features = bin[1]
+        if centrer_reduire == ['yes']:
+            X = centrer_reduire_norm(df=df,features=features)
+        else:
+            X = df[features]
+        Y= df[target]
+        params = {'n_neighbors':[5,10,15,20,25], 'weights':["uniform","distance"], 'algorithm':["auto","brute"], 'leaf_size':[5,10,20,30,40], 'p':[1,2], 'metric':["minkowski","euclidean","manhattan"]}
+        grid_search = get_best_params(X=X,Y=Y,clf="KNeighborsClassifier",params=params,cv=GridSearchCV_number_of_folds,scoring=GridSearchCV_scoring,njobs=njobs)
+        return html.Div(["GridSearchCV best parameters : {}".format(grid_search[0].best_params_),html.Br(),html.Br(),"GridSearchCV best",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{}".format(grid_search[0].best_score_)],style={'color': 'blue'}),html.Br(),html.Br(),"time : {} sec".format(grid_search[1])]),""
 
-# def ShowModelAttributes(model,file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire,num_variables):
-#     if file_path is None:
-#         raise PreventUpdate
-#     else:
-#         df = get_pandas_dataframe(file_path)
-#         if model == "kmeans":
 
-#             if any(item not in num_variables for item in features) == True:
-#                 df_ = pd.get_dummies(df.loc[:, df.columns != target])
-#                 features = list(df_.columns)
-#                 df = pd.concat([df_,df[target]],axis=1)
+# FitPredict
+@app.callback(
+    Output(component_id='res_KNeighborsClassifier_FitPredict',component_property='children'),
+    Output(component_id="ls-loading-output-3", component_property="children"),
+    Input(component_id='KNeighborsClassifier_button_FitPredict',component_property='n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State(component_id='num_variables',component_property='data'),
+    State(component_id='KNeighborsClassifier_n_neighbors',component_property='value'),
+    State(component_id='KNeighborsClassifier_weights',component_property='value'),
+    State(component_id='KNeighborsClassifier_algorithm',component_property='value'),
+    State(component_id='KNeighborsClassifier_leaf_size',component_property='value'),
+    State(component_id='KNeighborsClassifier_p',component_property='value'),
+    State(component_id='KNeighborsClassifier_metric',component_property='value'),
+    State(component_id='KNeighborsClassifier_centrer_reduire',component_property='value'))
+def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,algorithm,leaf_size,p,metric,centrer_reduire):
+    if (n_clicks == 0):
+        return "",""
+    else:
+        df = get_pandas_dataframe(file)
+        check_type_heterogeneity = all(element in num_variables for element in features)
+        if check_type_heterogeneity == False:
+            bin = binariser(df=df,features=features,target=target)
+            df = bin[0]
+            features = bin[1]
+        if centrer_reduire == ['yes']:
+            X = centrer_reduire_norm(df=df,features=features)
+        else:
+            X = df[features]
+        Y= df[target]
+        clf = build_KNeighborsClassifier(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric)
+        X_train,X_test,y_train,y_test = train_test_split(X,Y)
+        clf.fit(X_train.values,y_train.values)
+        y_pred = clf.predict(X_test.values)
+        labels = np.unique(y_test)
+        df_cm = pd.DataFrame(confusion_matrix(y_test, y_pred,labels=labels),columns=labels, index=labels)
+        df_cm.insert(0, target, df_cm.index)
+        pca = PCA(n_components=2)
+        temp = pca.fit_transform(X_test)
+        coord = pd.DataFrame(temp,columns=["PCA1","PCA2"])
+        Y_pred = pd.DataFrame(y_pred,columns=["knn_clusters"])
+        Y_test = pd.DataFrame(y_test.values,columns=[target])
+        result = pd.concat([coord,Y_pred,Y_test],axis=1)
+        fig_knn = px.scatter(result, x="PCA1", y="PCA2", color="knn_clusters", hover_data=['knn_clusters'],
+                         title="PCA du jeu de données {}, y_pred KNeighborsClassifier".format(file.split("/")[-1]))
+        fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
+                         title="PCA du jeu de données {}, y_test".format(file.split("/")[-1]))
 
-#             if random_state == "None":
-#                 random_state = None
+        return html.Div(["Matrice de confusion : ",html.Br(),dash_table.DataTable(id='KNeighborsClassifier_cm',columns=[{"name": i, "id": i} for i in df_cm.columns],data=df_cm.to_dict('records'),),html.Br(),"f1_score : {}".format(f1_score(y_test, y_pred,average="macro")),html.Br(),"recall score : {}".format(recall_score(y_test, y_pred,average="macro")),html.Br(),"precision score : {}".format(precision_score(y_test, y_pred,average="macro")),html.Br(),"accuracy score : {}".format(accuracy_score(y_test, y_pred)),html.Br(),dcc.Graph(id='res_KNeighborsClassifier_FitPredict_inputgraph', figure=fig_input_data),dcc.Graph(id='res_KNeighborsClassifier_FitPredict_knngraph', figure=fig_knn)]),""
 
-#             kmeans = build_kmeans(df[features],n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire)
-#             return [{"label":v,"value":v} for v in list(kmeans.__dict__.keys())+["randscore_"] if v.endswith("_")],"randscore_"
-#         else:
-#             raise PreventUpdate
+# CrossValidation
+@app.callback(
+    Output(component_id='res_KNeighborsClassifier_CrossValidation',component_property='children'),
+    Output(component_id="ls-loading-output-2", component_property="children"),
+    Input(component_id='KNeighborsClassifier_button_CrossValidation',component_property='n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State(component_id='num_variables',component_property='data'),
+    State(component_id='KNeighborsClassifier_n_neighbors',component_property='value'),
+    State(component_id='KNeighborsClassifier_weights',component_property='value'),
+    State(component_id='KNeighborsClassifier_algorithm',component_property='value'),
+    State(component_id='KNeighborsClassifier_leaf_size',component_property='value'),
+    State(component_id='KNeighborsClassifier_p',component_property='value'),
+    State(component_id='KNeighborsClassifier_metric',component_property='value'),
+    State(component_id='KNeighborsClassifier_centrer_reduire',component_property='value'),
+    State(component_id='KNeighborsClassifier_cv_number_of_folds',component_property='value'),
+    State(component_id='KNeighborsClassifier_cv_scoring',component_property='value'))
+def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,algorithm,leaf_size,p,metric,centrer_reduire,cv_number_of_folds,cv_scoring):
+    if (n_clicks == 0):
+        return "",""
+    else:
+        df = get_pandas_dataframe(file)
+        check_type_heterogeneity = all(element in num_variables for element in features)
+        if check_type_heterogeneity == False:
+            bin = binariser(df=df,features=features,target=target)
+            df = bin[0]
+            features = bin[1]
+        if centrer_reduire == ['yes']:
+            X = centrer_reduire_norm(df=df,features=features)
+        else:
+            X = df[features]
+        Y= df[target]
+        clf = build_KNeighborsClassifier(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric)
+        res = cross_validation(clf=clf,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
+        return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{}".format(mean(res[0]))],style={'color': 'green'}),html.Br(),html.Br(),"time : {} sec".format(res[1])]),""
 
-# @app.callback(
-#     Output(component_id='kmeans-explore-object-display',component_property='children'),
-#     Output(component_id='kmeans-pca',component_property='figure'),
-#     Output(component_id='input-pca',component_property='figure'),
-#     Input(component_id='model_selection',component_property='value'),
-#     Input(component_id='file_selection', component_property='value'),
-#     Input(component_id='target_selection',component_property='value'),
-#     Input(component_id='features_selection',component_property='value'),
-#     Input(component_id='n_clusters',component_property='value'),
-#     Input(component_id='init',component_property='value'),
-#     Input(component_id='n_init',component_property='value'),
-#     Input(component_id='max_iter',component_property='value'),
-#     Input(component_id='tol',component_property='value'),
-#     Input(component_id='verbose',component_property='value'),
-#     Input(component_id='random_state',component_property='value'),
-#     Input(component_id='algorithm',component_property='value'),
-#     Input(component_id='centrer_reduire',component_property='value'),
-#     Input(component_id='kmeans-explore-object',component_property='value'),
-#     Input('num_variables','data'))
-# def ShowModelResults(model,file_path,target,features,n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire,kmeans_object_value,num_variables):
-#     if file_path is None:
-#         raise PreventUpdate
-#     else:
-#         df = get_pandas_dataframe(file_path)
-#         if model == "kmeans":
-#             if any(item not in num_variables for item in features) == True:
-#                 df_ = pd.get_dummies(df.loc[:, df.columns != target])
-#                 features = list(df_.columns)
-#                 df = pd.concat([df_,df[target]],axis=1)
 
-#             if random_state == "None":
-#                 random_state = None
-#             kmeans = build_kmeans(df[features],n_clusters,init,n_init,max_iter,tol,verbose,random_state,algorithm,centrer_reduire)
-#             #y = list(df[target].replace({"setosa":0,"versicolor":1,"virginica":2}))
-#             setattr(kmeans, 'randscore_', adjusted_rand_score(kmeans.labels_,df[target]))
-#             pca = PCA(n_components=2)
-#             temp = pca.fit_transform(df[features])
-#             coord = pd.DataFrame(temp,columns=["PCA1","PCA2"])
-#             Y_pred = pd.DataFrame(list(map(str,kmeans.labels_)),columns=["kmeans_clusters"])
-#             result = pd.concat([coord,Y_pred,df[target]], axis=1)
-#             fig_kmeans = px.scatter(result, x="PCA1", y="PCA2", color="kmeans_clusters", hover_data=['kmeans_clusters'],
-#                              title="PCA du jeu de données {} colorié par clusters du KMeans".format(file_path.split("/")[-1]))
-#             fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
-#                              title="PCA du jeu de données {} colorié en fonction de la variable à prédire".format(file_path.split("/")[-1]))
-#             return html.P("{}".format(getattr(kmeans, kmeans_object_value))),fig_kmeans,fig_input_data
-#         else:
-#             raise PreventUpdate
 
-# @app.callback(
-#     Output('test','children'),
-#     Input('file_selection','value'),
-#     Input('target_selection','value'),
-#     Input('features_selection','value')
-# )
-# def display(file_selection,target_selection,feature_selection):
-#     ctx=dash.callback_context
 
-#     ctx_msg = json.dumps({
-#         'states': ctx.states,
-#         'triggered': ctx.triggered,
-#         'inputs': ctx.inputs
-#     }, indent=2)
-
-#     return html.Div([
-#         html.Pre(ctx_msg)
-#     ])
-
-# Affichage du tableau après ajout d'un fichier.
-# @app.callback(Output('output-data-upload', 'children'),
-#               Input('upload-data', 'contents'), # les données du fichier
-#               State('upload-data', 'filename'), # nom du fichier
-# )
-# def update_output(list_of_contents, list_of_names):
-#     if list_of_contents is not None:
-#         children = [
-#             parse_contents(c, n) for c, n in
-#             zip(list_of_contents, list_of_names)]
-#         return children
-
-app.css.append_css({'external_url': './assets/style2.css' # LINUX - MAC-OS
+app.css.append_css({'external_url': './assets/style4columns.css' # LINUX - MAC-OS
 })
 
 if __name__=='__main__':
