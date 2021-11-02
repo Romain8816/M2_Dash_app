@@ -507,9 +507,8 @@ def update_result_tree(n_clicks,plot_clicks,model,target,feature,file,criterion,
         moy = np.mean(cross_val) # sert de prédiction
         
         
-        # affichage l'arbre sortie graphique 
         
-       
+        # affichage l'arbre sortie graphique 
         changed_id = [p['prop_id'] for p in callback_context.triggered][0]
         if 'plot_button' in changed_id: 
             plot_tree(tree,max_depth=max_depth,

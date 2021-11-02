@@ -191,12 +191,11 @@ classification_decision_tree = dbc.Card(
                                 value=0
                             ),
                             html.Br(),
+                            html.H4("Validation des paramètres"),
                             dbc.Button("Valider", color="danger",id='tree_button',n_clicks=0)
                         ],className="six columns",
 
                     ),
-                    html.Br(),
-                    html.Br(),
                     html.Div
                         (
                             [
