@@ -212,11 +212,10 @@ classification_decision_tree = dbc.Card(
                                     value="accuracy"),
                                 html.Br(),
                                 html.Div(id='print_result_metric'),
-                                #html.Br(),
-                                #dcc.Graph(id='tree_plot',style={'width': '90vh', 'height': '90vh'}),
-                                #html.Br(),
-                                #dcc.Graph(id='input-pca',style={'width': '90vh', 'height': '90vh'})
-                            ], className="six columns"
+                                html.Br(),
+                                html.H4("Visualisation de l'arbre de decsion : "),
+                                dbc.Button("Viszualise tree", color="danger",id='plot_button',n_clicks=0)
+                                ], className="six columns"
                         ),
                 ],
             ),

@@ -1,7 +1,7 @@
 from tkinter.constants import NONE
 import dash
 from dash import dcc
-from dash import html
+from dash import html, callback_context
 from dash.development.base_component import Component
 import dash_bootstrap_components as dbc
 from dash_bootstrap_components._components.Collapse import Collapse
@@ -462,6 +462,7 @@ classification_decision_tree = dbc.Card(
     Output(component_id='print_result_metric', component_property='children'),
     #Output(component_id='tree_plot', component_property='figure'),
     Input('tree_button','n_clicks'),
+    Input('plot_button','n_clicks'),
     #bouton pour afficher le graphe 
     [State('model_selection','value'),
     State('target_selection','value'),
@@ -474,16 +475,16 @@ classification_decision_tree = dbc.Card(
     State('min_samples_leaf','value'),
     State('max_leaf_nodes','value'),
     State('diff_metric','value')])
-def update_result_tree(n_clicks,model,target,feature,file,criterion,splitter,max_depth,min_samples_split,min_samples_leaf,max_leaf_nodes,metric):
+def update_result_tree(n_clicks,plot_clicks,model,target,feature,file,criterion,splitter,max_depth,min_samples_split,min_samples_leaf,max_leaf_nodes,metric):
     #creation du dataframe
 
     if n_clicks == 0:
         print(n_clicks)
         raise PreventUpdate
     else :
-        print(n_clicks)
+        #print(n_clicks)
         df = get_pandas_dataframe(file)
-        print(df.head(10))
+        #print(df.head(10))
         #on le fait que si model == arbre decison
 
             # prendre en compte le parametre None
@@ -508,12 +509,14 @@ def update_result_tree(n_clicks,model,target,feature,file,criterion,splitter,max
         
         # affichage l'arbre sortie graphique 
         
-        plot_tree(tree,max_depth=max_depth,
-                         feature_names=feature,
-                         class_names=y.unique(),
-                         filled=True)
-        
-        plt.show()
+       
+        changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+        if 'plot_button' in changed_id: 
+            plot_tree(tree,max_depth=max_depth,
+                             feature_names=feature,
+                             class_names=y.unique(),
+                             filled=True)
+            plt.show()
         """
         fig.savefig('tree_plot.png')
         name = 'tree_plot.png'
