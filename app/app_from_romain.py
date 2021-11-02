@@ -26,10 +26,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.decomposition import PCA
-from sklearn.tree import DecisionTreeClassifier
+
+from sklearn.tree import DecisionTreeClassifier,plot_tree
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score,precision_score,recall_score,roc_curve,auc
+import matplotlib.pyplot as plt
 
 #from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection #, kmeans_params_and_results
 #from layout.layout import regression_tabs, classification_tabs
@@ -358,7 +360,7 @@ def ShowKmeansObjectAttributes(kmeans_object_value):
     print(kmeans_object_value)
     return html.P(kmeans_object_value)
 
-
+"""
 classification_decision_tree = dbc.Card(
     children = [
             html.Div(
@@ -455,11 +457,12 @@ classification_decision_tree = dbc.Card(
         ],
     #body=True
 )
-
+"""
 @app.callback(
     Output(component_id='print_result_metric', component_property='children'),
-    #Output(component_id='courbe_roc', component_property='children'),
+    #Output(component_id='tree_plot', component_property='figure'),
     Input('tree_button','n_clicks'),
+    #bouton pour afficher le graphe 
     [State('model_selection','value'),
     State('target_selection','value'),
     State('features_selection','value'),
@@ -494,15 +497,29 @@ def update_result_tree(n_clicks,model,target,feature,file,criterion,splitter,max
         y = df.loc[:,target]
 
         X_train,X_test,y_train,y_test = train_test_split(X,y,test_size = 0.3, random_state=0)
-        print(X_train)
+        
         #creation du model
         tree = build_tree(X_train, y_train, criterion, splitter, max_depth, min_samples_split,min_samples_leaf,max_leaf_nodes)
 
         cross_val = cross_val_score(tree, X,y,cv=5,scoring=metric)
         # retour la moyenne des métrics choisi
         moy = np.mean(cross_val) # sert de prédiction
-
+        
+        
+        # affichage l'arbre sortie graphique 
+        
+        plot_tree(tree,max_depth=max_depth,
+                         feature_names=feature,
+                         class_names=y.unique(),
+                         filled=True)
+        
+        plt.show()
         """
+        fig.savefig('tree_plot.png')
+        name = 'tree_plot.png'
+        image_filename=os.getcwd()+"\\tree_plot.png"
+        encoded_image = base64.b64encode(open(image_filename, 'rb').read())
+        
         #affichage de la courbe roc
         y_score = tree.predict_proba(X_test)
         fp,vp, thresholds = roc_curve(y_test, y_score[:,1])
@@ -519,7 +536,7 @@ def update_result_tree(n_clicks,model,target,feature,file,criterion,splitter,max
             x0=0, x1=1, y0=0, y1=1
         )
         """
-        print(moy)
+        
         return html.P('Résult {}'.format(str(moy)))
 
 

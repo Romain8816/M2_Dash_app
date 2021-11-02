@@ -213,7 +213,7 @@ classification_decision_tree = dbc.Card(
                                 html.Br(),
                                 html.Div(id='print_result_metric'),
                                 #html.Br(),
-                                #dcc.Graph(id='courbe_roc',style={'width': '90vh', 'height': '90vh'}),
+                                #dcc.Graph(id='tree_plot',style={'width': '90vh', 'height': '90vh'}),
                                 #html.Br(),
                                 #dcc.Graph(id='input-pca',style={'width': '90vh', 'height': '90vh'})
                             ], className="six columns"
