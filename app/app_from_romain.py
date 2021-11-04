@@ -312,8 +312,11 @@ def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regu
 
         model.fit(X_train,y_train)
         y_pred = model.predict(X_test)
+
+        fig = px.imshow(df.corr())
         
-        
+        #fig = px.scatter_matrix(df,dimensions=features)
+
         # train_score, val_score = validation_curve(model,X_train,y_train,param_name='svr__C',param_range=np.arange(0,100),cv=k_fold)
         
         # fig = go.Figure()
@@ -329,8 +332,8 @@ def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regu
                             html.P('R² : '+str(rsquared)),
                             html.P('MSE : '+str(mse))
                         ]
-                    )
-                    #dcc.Graph(figure=fig)
+                    ),
+                    dcc.Graph(figure=fig)
                 ]
 
 
