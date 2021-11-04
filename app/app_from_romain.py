@@ -290,7 +290,8 @@ def stats_descrip(file,features,target,num_var):
     State(component_id='k_fold',component_property='value'),
     State(component_id='svm_kernel_selection',component_property='value'),          # Noyau
     State(component_id='svm_regularisation_selection',component_property='value'),  # C
-    State(component_id='svm_epsilon',component_property='value'))
+    State(component_id='svm_epsilon',component_property='value'),
+    State('svm_degre','value'))
 
 def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon):
 
