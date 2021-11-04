@@ -440,7 +440,7 @@ def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,alg
             X = df[features]
         Y= df[target]
         clf = build_KNeighborsClassifier(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric)
-        res = cross_validation_KNeighborsClassifier(clf=clf,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
+        res = cross_validation(clf=clf,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
         t2 = time.time()
         diff = t2 - t1
         if isinstance(res,str):
