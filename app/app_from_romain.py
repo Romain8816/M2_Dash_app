@@ -37,10 +37,10 @@ from sklearn.impute import SimpleImputer
 from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.model_selection import validation_curve
 
-from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results
+from layout.layout import location_folder, dataset_selection, target_selection,features_selection
 from layout.layout import regression_tabs, classification_tabs
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
-from fonctions.algo_functions import build_kmeans, build_smv
+from fonctions.algo_functions import build_smv
 from plotly import tools as tls
 import plotly.graph_objects as go
 

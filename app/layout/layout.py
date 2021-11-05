@@ -301,6 +301,132 @@ classification_KNeighborsClassifier = dbc.Card(
         ],body=True
 )
 
+# Ensemble des onglets de classification
+classification_tabs = dbc.Tabs(
+    id="classification_tab",
+    children= [
+        dbc.Tab(classification_decision_tree,label="Arbre de décision",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        #dbc.Tab(classification_SVM,label="SVM",tab_id ='svm',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(classification_KNeighborsClassifier,label="KNeighborsClassifier", tab_id='KNeighborsClassifier',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
+    ]
+)
+
+########################################################################################################
+# (Régression) Onglets
+
+# Régression linéaire
+
+# SVR
+regression_svm = dbc.Card(
+    children=[
+        html.H2(html.B(html.P("Support Vector Regression", className="card-text"))),html.Br(),html.Br(),
+        html.Div(
+            children = 
+            [
+                html.H3(html.B("Settings")),html.Br(),html.Hr(),html.Br(),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dbc.Label("Taille de l'échantillion de test (compris entre 0.0 et 1.0)", html_for="test_size",style={'font-weight': 'bold'}),
+                            width=3
+                        ),
+                        dbc.Col(
+                            dcc.Slider(
+                                id='test_size',min=0.0,max=1.0,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True},
+                                #className="col-sm-6 col-md-5 col-lg-4",# Taille de la slider sur 3 colonnes 
+                            ),width=3
+                        )
+                    ]
+                ),
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dbc.Label("Random seed", html_for="random_state",style={'font-weight': 'bold'}),
+                        dbc.Input(id='random_state',type='number'),
+                    ],width=2,
+                ),
+                dbc.Col(
+                    [
+                        dbc.Label("K-folds ", html_for="k_fold",style={'font-weight': 'bold'}),
+                        dbc.Input(id='k_fold',value=5,type='number'),
+                    ],width=2,
+                )
+            ],
+        ),
+        html.Br(),html.Br(),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dbc.Label("Type de noyau (kernel)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
+                        dcc.Dropdown(
+                            id='svm_kernel_selection',
+                            options=[
+                                {'label': 'linéaire', 'value': 'linear'},
+                                {'label': 'polynomial', 'value': 'poly'},
+                                {'label': 'RBF', 'value': 'rbf'},
+                                {'label': 'Sigmoïde', 'value': 'sigmoid'},
+                            ],
+                            value = 'rbf'
+                        ),
+                    ],width=2
+                ),
+                dbc.Col(
+                    [
+                        dbc.Label("Degré (pour noyau polynomial)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
+                        dbc.Input(
+                            id='svm_degre',
+                            type='number',
+                            min=0,
+                            max=4,
+                            step=1,
+                            value=0,
+                            ),
+                    ],width=2
+                )
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dbc.Label("Régularisation (C)", html_for="svm_regularisation_selection",style={'font-weight': 'bold'}),
+                        dbc.Input(
+                            id='svm_regularisation_selection',
+                            type='number',
+                            min=0,
+                            max=100,
+                            step=0.1,
+                            value=0.1,
+                        ),
+                    ],width=2,
+                ),
+                dbc.Col(
+                    [
+                        dbc.Label("Epsilon (ε)",html_for='svm_epsilon',style={'font-weight': 'bold'}),
+                        dbc.Input(
+                            id='svm_epsilon',
+                            type='number',
+                            value=0.1,
+                            min=0,
+                            max=100,
+                            step=0.1,
+                            #className="col-2"
+                        ),
+                    ],width=2,
+                )
+            ]
+        ),
+        html.Br(),html.Br(),
+        dbc.Button("Valider", color="danger",id='smv_button',n_clicks=0),
+        html.Div(id='res_svm')
+    ],
+    body=True
+)
+
 # KNeighborsRegressor
 regression_KNeighborsRegressor = dbc.Card(
     children=[
@@ -432,138 +558,11 @@ regression_KNeighborsRegressor = dbc.Card(
     body=True
 )
 
-# Ensemble des onglets de classification
-classification_tabs = dbc.Tabs(
-    id="classification_tab",
-    children= [
-        dbc.Tab(classification_decision_tree,label="Arbre de décision",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-        #dbc.Tab(classification_SVM,label="SVM",tab_id ='svm',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-        dbc.Tab(classification_KNeighborsClassifier,label="KNeighborsClassifier", tab_id='KNeighborsClassifier',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
-    ]
-)
-
-########################################################################################################
-# (Régression) Onglets
-
-# linéaire, SVR, ? 
-
-# SVM
-regression_svm = dbc.Card(
-    children=[
-        html.Div(
-            dbc.Row(
-                [
-                    html.P("Support Vector Machine", className="card-text"),
-                    dbc.Col(
-                        dbc.Label("Taille de l'échantillion de test (compris entre 0.0 et 1.0)", html_for="test_size",style={'font-weight': 'bold'}),
-                        width=3
-                    ),
-                    dbc.Col(
-                        dcc.Slider(
-                            id='test_size',
-                            min=0.0,
-                            max=1.0,
-                            step=0.1,
-                            value=0.3,
-                            tooltip={"placement": "bottom", "always_visible": True},
-                            #className="col-sm-6 col-md-5 col-lg-4",# Taille de la slider sur 3 colonnes 
-                        ),width=3
-                    )
-                ]
-            ),
-        ),
-        dbc.Row(
-            [
-                dbc.Col(
-                    [
-                        dbc.Label("Random seed", html_for="random_state",style={'font-weight': 'bold'}),
-                        dbc.Input(id='random_state',type='number'),
-                    ],width=2,
-                ),
-                dbc.Col(
-                    [
-                        dbc.Label("K-folds ", html_for="k_fold",style={'font-weight': 'bold'}),
-                        dbc.Input(id='k_fold',value=5,type='number'),
-                    ],width=2,
-                )
-            ],
-        ),
-        html.Br(),html.Br(),
-        dbc.Row(
-            [
-                dbc.Col(
-                    [
-                        dbc.Label("Type de noyau (kernel)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
-                        dcc.Dropdown(
-                            id='svm_kernel_selection',
-                            options=[
-                                {'label': 'linéaire', 'value': 'linear'},
-                                {'label': 'polynomial', 'value': 'poly'},
-                                {'label': 'RBF', 'value': 'rbf'},
-                                {'label': 'Sigmoïde', 'value': 'sigmoid'},
-                            ],
-                            value = 'rbf'
-                        ),
-                    ],width=2
-                ),
-                dbc.Col(
-                    [
-                        dbc.Label("Degré (pour noyau polynomial)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
-                        dbc.Input(
-                            id='svm_degre',
-                            type='number',
-                            min=0,
-                            max=4,
-                            step=1,
-                            value=0,
-                            ),
-                    ],width=2
-                )
-            ]
-        ),
-        dbc.Row(
-            [
-                dbc.Col(
-                    [
-                        dbc.Label("Régularisation (C)", html_for="svm_regularisation_selection",style={'font-weight': 'bold'}),
-                        dbc.Input(
-                            id='svm_regularisation_selection',
-                            type='number',
-                            min=0,
-                            max=100,
-                            step=0.1,
-                            value=0.1,
-                        ),
-                    ],width=2,
-                ),
-                dbc.Col(
-                    [
-                        dbc.Label("Epsilon (ε)",html_for='svm_epsilon',style={'font-weight': 'bold'}),
-                        dbc.Input(
-                            id='svm_epsilon',
-                            type='number',
-                            value=0.1,
-                            min=0,
-                            max=100,
-                            step=0.1,
-                            #className="col-2"
-                        ),
-                    ],width=2,
-                )
-            ]
-        ),
-        html.Br(),html.Br(),
-        dbc.Button("Valider", color="danger",id='smv_button',n_clicks=0),
-        html.Div(id='res_svm')
-    ],
-    body=True
-)
-
 regression_tabs = dbc.Tabs(
     id='regression_tabs',
     children = [
         dbc.Tab(label="Régression linéaire",tab_id='reg_lin'),
-        dbc.Tab(regression_svm,label="SVM",tab_id ='svr'),
+        dbc.Tab(regression_svm,label="SVR",tab_id ='svr'),
         dbc.Tab(regression_KNeighborsRegressor,label="KNeighborsRegressor", tab_id='KNeighborsRegressor',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
     ]
 )
