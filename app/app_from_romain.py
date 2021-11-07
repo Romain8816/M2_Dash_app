@@ -289,6 +289,58 @@ def stats_descrip(file,features,target,num_var):
 ########################################################################################################
 # (SVM)
 
+# Gridsearch
+@app.callback(
+    Output(component_property='test',component_id='children'),
+    Input(component_id='svr_button_GridSearchCV',component_property='n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State(component_id='svr_gridCV_k_folds',component_property='value'),
+    State(component_id='svr_GridSearchCV_njobs',component_property='value'),
+    State(component_id='svr_gridCV_scoring',component_property='value'))
+
+def GridsearchSVM (n_clicks,file,target,features,test_size,k_fold,metric):
+    
+    if (n_clicks==0):
+        PreventUpdate
+    else:
+        
+        df = get_pandas_dataframe(file)
+        X= df[features]
+        y= df[target]
+        
+        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size)
+
+        numerical_features = make_column_selector(dtype_include=np.number)
+        categorical_features = make_column_selector(dtype_exclude=np.number)
+
+        categorical_pipeline = make_pipeline(SimpleImputer(strategy='most_frequent'),OneHotEncoder(drop='first',sparse=False))
+        numerical_pipeline = make_pipeline(SimpleImputer(),StandardScaler())
+
+        preprocessor = make_column_transformer((numerical_pipeline,numerical_features),
+                                            (categorical_pipeline,categorical_features))
+
+        
+        model = make_pipeline(preprocessor,SVR())
+        params = {
+            'svr__kernel':['linear','poly','rbf','sigmoid'],
+            'svr__degree': [i for i in range(1,6)],
+            'svr__gamma': ['scale','auto'],
+            'svr__coef0': [i for i in range(0.1)],
+            'svr__C' : [i for i in range(0.1,10,0.1)],
+            'svr__epsilon' : [i for i in range(0.1,1)]
+        }
+        grid = GridSearchCV(model,params,metric)
+        grid.fit(X_train,y_train)
+
+
+    return  1
+
+
+
+
+# Fit et predict 
 @app.callback(
     Output('res_svm','children'),
     Input('smv_button','n_clicks'),
@@ -303,7 +355,7 @@ def stats_descrip(file,features,target,num_var):
     State(component_id='svm_epsilon',component_property='value'),
     State('svm_degre','value'))
 
-def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon):
+def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon,degre):
 
     if (n_clicks == 0):
         PreventUpdate
