@@ -331,20 +331,35 @@ regression_svm = dbc.Card(
                         html.H3(html.B("Settings")),html.Hr(),
                         html.H4(html.B("Optimisation des hyperparamètres :")),html.Br(),
 
+
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    dbc.Label("Taille de l'échantillon d'entrainement", html_for="train_size",style={'font-weight': 'bold'}),
+                                    width=5
+                                ),
+                                dbc.Col(
+                                    dcc.Slider(
+                                        id='train_size',min=0.0,max=1.0,step=0.1,value=0.7,tooltip={"placement": "bottom", "always_visible": True}
+                                        #className="col-sm-6 col-md-5 col-lg-4",# Taille de la slider sur 3 colonnes 
+                                    ),width=5
+                                )
+                            ]
+                        ),
                         html.B("GridSearchCV_number_of_folds "),html.I("par défaut=10"),html.Br(),
 
                         html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée pour l'optimisation des hyperparamètres.", className="card-text"),
-                        dcc.Input(id="svr_gridCV_k_folds", type="number", placeholder="input with range",min=1,max=100, step=1,value=10),html.Br(),html.Br(),
+                        dcc.Input(id="svr_gridCV_k_folds", type="number", placeholder="input with range",min=1,max=100, step=1,value=5),html.Br(),html.Br(),
                     
                         html.B("GridSearchCV_scoring "),html.I("par défaut = 'MSE'"),html.Br(),
                         html.P("Selectionner la méthode de scoring pour l'optimisation des hyperparamètres."),
                         dcc.Dropdown(
                             id='svr_gridCV_scoring',
                             options=[
-                                {'label': "MSE", 'value': "MSE"},
+                                {'label': "MSE", 'value': "neg_mean_squared_error"},
                                 {'label': "R2", 'value': "r2"},
                             ],
-                            value = 'MSE'
+                            value = 'neg_mean_squared_error'
                         ),html.Br(),html.Br(),
 
                         html.B("GridSearchCV_njobs "),html.I("par défaut=-1"),html.Br(),
@@ -369,7 +384,7 @@ regression_svm = dbc.Card(
                         dbc.Row(
                             [
                                 dbc.Col(
-                                    dbc.Label("Taille de l'échantillion de test", html_for="test_size",style={'font-weight': 'bold'}),
+                                    dbc.Label("Taille de l'échantillon de test", html_for="test_size",style={'font-weight': 'bold'}),
                                     width=5
                                 ),
                                 dbc.Col(
@@ -430,7 +445,7 @@ regression_svm = dbc.Card(
                                             max=4,
                                             step=1,
                                             value=0,
-                                            ),
+                                        ),
                                     ],
                                 )
                             ]
@@ -482,7 +497,7 @@ regression_svm = dbc.Card(
                 html.Div(
                     [
                         html.H3(html.B("Résultats :")),html.Hr(),
-                        html.Div(id="res_KNeighborsRegressor_GridSearchCV"),html.Br(),html.Hr(),
+                        html.Div(id="res_svr_GridSearchCV"),html.Br(),html.Hr(),
                         html.Div(id="res_KNeighborsRegressor_FitPredict"),html.Br(),html.Hr(),
                         html.Div(id="res_KNeighborsRegressor_CrossValidation")
                     ],
@@ -643,8 +658,8 @@ regression_KNeighborsRegressor = dbc.Card(
 regression_tabs = dbc.Tabs(
     id='regression_tabs',
     children = [
-        dbc.Tab(label="Régression linéaire",tab_id='reg_lin'),
         dbc.Tab(regression_svm,label="SVR",tab_id ='svr'),
-        dbc.Tab(regression_KNeighborsRegressor,label="KNeighborsRegressor", tab_id='KNeighborsRegressor',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
+        dbc.Tab(regression_KNeighborsRegressor,label="KNeighborsRegressor", tab_id='KNeighborsRegressor',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(label="Régression linéaire",tab_id='reg_lin')
     ]
 )

@@ -33,9 +33,6 @@ from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.metrics import make_scorer, recall_score, precision_score, f1_score, mean_squared_error, r2_score
 import time
 
-def train_test(X,y,test_size):
-    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size)
-    return None
 
 def get_best_params(X,Y,clf,params,cv,scoring,njobs):
     if clf == "KNeighborsClassifier":

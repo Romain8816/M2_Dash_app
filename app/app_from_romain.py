@@ -287,30 +287,30 @@ def stats_descrip(file,features,target,num_var):
 
 
 ########################################################################################################
-# (SVM)
+# (Régression) SVM
 
 # Gridsearch
 @app.callback(
-    Output(component_property='test',component_id='children'),
-    Input(component_id='svr_button_GridSearchCV',component_property='n_clicks'),
+    Output(component_id='res_svr_GridSearchCV',component_property='children'),   # Affichage des meilleurs paramètres 
+    Input(component_id='svr_button_GridSearchCV',component_property='n_clicks'), # Validation du Gridsearch
     State(component_id='file_selection',component_property='value'),
     State(component_id='target_selection',component_property='value'),
     State(component_id='features_selection',component_property='value'),
+    State(component_id='train_size',component_property='value'),
     State(component_id='svr_gridCV_k_folds',component_property='value'),
     State(component_id='svr_GridSearchCV_njobs',component_property='value'),
     State(component_id='svr_gridCV_scoring',component_property='value'))
 
-def GridsearchSVM (n_clicks,file,target,features,test_size,k_fold,metric):
+def GridsearchSVM (n_clicks,file,target,features,train_size,k_fold,n_jobs,metric):
     
     if (n_clicks==0):
         PreventUpdate
     else:
-        
         df = get_pandas_dataframe(file)
         X= df[features]
         y= df[target]
         
-        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size)
+        X_train,X_test,y_train,y_test = train_test_split(X,y,train_size=train_size)
 
         numerical_features = make_column_selector(dtype_include=np.number)
         categorical_features = make_column_selector(dtype_exclude=np.number)
@@ -321,21 +321,21 @@ def GridsearchSVM (n_clicks,file,target,features,test_size,k_fold,metric):
         preprocessor = make_column_transformer((numerical_pipeline,numerical_features),
                                             (categorical_pipeline,categorical_features))
 
-        
+
         model = make_pipeline(preprocessor,SVR())
         params = {
             'svr__kernel':['linear','poly','rbf','sigmoid'],
             'svr__degree': [i for i in range(1,6)],
             'svr__gamma': ['scale','auto'],
-            'svr__coef0': [i for i in range(0.1)],
-            'svr__C' : [i for i in range(0.1,10,0.1)],
-            'svr__epsilon' : [i for i in range(0.1,1)]
+            'svr__coef0': [i for i in np.arange(0.1,1,0.1)],
+            'svr__C' : [i for i in np.arange(0.1,1,0.1)],
+            'svr__epsilon' : [i for i in np.arange(0.1,1,0.1)]
         }
-        grid = GridSearchCV(model,params,metric)
+        grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=n_jobs)
         grid.fit(X_train,y_train)
-
-
-    return  1
+        print('hello')
+        print(grid.best_params_)
+        return (html.P(grid.best_params_))
 
 
 
@@ -399,6 +399,177 @@ def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regu
                     dcc.Graph(figure=fig)
                 ]
 
+
+
+########################################################################################################
+# (KNeighborsRegressor)
+
+# GridSearchCV
+@app.callback(
+    Output(component_id='res_KNeighborsRegressor_GridSearchCV',component_property='children'),
+    Output(component_id="KNeighborsRegressor-ls-loading-output-1", component_property="children"),
+    Input(component_id='KNeighborsRegressor_button_GridSearchCV',component_property='n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State(component_id='num_variables',component_property='data'),
+    State(component_id='KNeighborsRegressor_centrer_reduire',component_property='value'),
+    State(component_id='KNeighborsRegressor_GridSearchCV_number_of_folds',component_property='value'),
+    State(component_id='KNeighborsRegressor_GridSearchCV_scoring',component_property='value'),
+    State(component_id='KNeighborsRegressor_GridSearchCV_njobs',component_property='value'))
+def GridSearchCV_score(n_clicks,file,target,features,num_variables,centrer_reduire,GridSearchCV_number_of_folds,GridSearchCV_scoring,njobs):
+    if (n_clicks == 0):
+        return "",""
+    else:
+        t1 = time.time()
+        if njobs == "None":
+            njobs = None
+        df = get_pandas_dataframe(file)
+        check_type_heterogeneity = all(element in num_variables for element in features)
+        if check_type_heterogeneity == False:
+            bin = binariser(df=df,features=features,target=target)
+            df = bin[0]
+            features = bin[1]
+        if centrer_reduire == ['yes']:
+            X = centrer_reduire_norm(df=df,features=features)
+        else:
+            X = df[features]
+        Y= df[target]
+        params = {'n_neighbors':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], 'weights':["uniform","distance"], 'algorithm':["auto","brute"], 'leaf_size':[5,10,20,30,40], 'p':[1,2], 'metric':["minkowski","euclidean","manhattan"]}
+        grid_search = get_best_params(X=X,Y=Y,clf="KNeighborsRegressor",params=params,cv=GridSearchCV_number_of_folds,scoring=GridSearchCV_scoring,njobs=njobs)
+        t2 = time.time()
+        diff = t2 - t1
+        return html.Div(
+            ["GridSearchCV paramètres optimaux : {}".format(grid_search.best_params_),html.Br(),html.Br(),
+            "GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.2f}".format(grid_search.best_score_)],style={'color': 'blue'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
+
+# FitPredict
+@app.callback(
+    Output(component_id='res_KNeighborsRegressor_FitPredict',component_property='children'),
+    Output(component_id="KNeighborsRegressor-ls-loading-output-3", component_property="children"),
+    Input(component_id='KNeighborsRegressor_button_FitPredict',component_property='n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State(component_id='num_variables',component_property='data'),
+    State(component_id='KNeighborsRegressor_n_neighbors',component_property='value'),
+    State(component_id='KNeighborsRegressor_weights',component_property='value'),
+    State(component_id='KNeighborsRegressor_algorithm',component_property='value'),
+    State(component_id='KNeighborsRegressor_leaf_size',component_property='value'),
+    State(component_id='KNeighborsRegressor_p',component_property='value'),
+    State(component_id='KNeighborsRegressor_metric',component_property='value'),
+    State(component_id='KNeighborsRegressor_centrer_reduire',component_property='value'),
+    State(component_id='KNeighborsRegressor_test_size',component_property='value'),
+    State(component_id='KNeighborsRegressor_shuffle',component_property='value'))
+def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,algorithm,leaf_size,p,metric,centrer_reduire,test_size,shuffle):
+    if (n_clicks == 0):
+        return "",""
+    else:
+        t1 = time.time()
+        df = get_pandas_dataframe(file)
+        check_type_heterogeneity = all(element in num_variables for element in features)
+        if check_type_heterogeneity == False:
+            bin = binariser(df=df,features=features,target=target)
+            df = bin[0]
+            features = bin[1]
+        if centrer_reduire == ['yes']:
+            X = centrer_reduire_norm(df=df,features=features)
+        else:
+            X = df[features]
+        Y= df[target]
+        clf = build_KNeighborsRegressor(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric)
+        if shuffle == "True":
+            shuffle = True
+        if shuffle == "False":
+            shuffle = False
+        X_train,X_test,y_train,y_test = train_test_split(X,Y,test_size=float(test_size),shuffle=shuffle)
+        clf.fit(X_train.values,y_train.values)
+        y_pred = clf.predict(X_test.values)
+        t2 = time.time()
+        diff = t2 - t1
+
+        #print(pd.concat([,y_pred],axis=1))
+        #fig_y_pred = px.scatter(x=, y=,color_discrete_sequence=['blue'],opacity=0.5)
+        #fig_y_test = px.scatter(x=X_test.iloc[:,0], y=y_test,color_discrete_sequence=['red'],opacity=0.5)
+        #fig_all = go.Figure(data=fig_y_pred.data + fig_y_test.data, name="Name of Trace 2")
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=X_test.iloc[:,0],
+            y=y_pred,
+            mode='markers',
+            name='y_pred',
+            marker={'size': 8, "opacity":0.8}
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=X_test.iloc[:,0],
+            y=y_test,
+            mode='markers',
+            name='y_test',
+            marker={'size': 8, "opacity":0.5}
+        ))
+
+        fig.update_layout(
+            title="Comparaison des points prédits avec les points tests",
+            xaxis_title="X",
+            yaxis_title="Y",
+            legend_title="",
+            font=dict(
+                family="Courier New, monospace",
+                size=12,
+                color="black"
+            )
+        )
+
+        return html.Div([html.B("Carré moyen des erreurs (MSE) "),": {:.2f}".format(mean_squared_error(y_test, y_pred)),html.Br(),html.Br(),
+                         html.B("Erreur quadratique moyenne (RMSE) "),": {:.2f}".format(sqrt(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),
+                         html.B("Coéfficient de détermination (R2) "),": {:.2f}".format(r2_score(y_test, y_pred)),html.Br(),html.Br(),
+                         "temps : {:.2f} sec".format(diff),html.Br(),html.Br(),
+                         dcc.Graph(id='res_KNeighborsRegressor_FitPredict_knngraph', figure=fig),html.Br(),html.Br(),
+                         ]),""
+
+
+# CrossValidation
+@app.callback(
+    Output(component_id='res_KNeighborsRegressor_CrossValidation',component_property='children'),
+    Output(component_id="KNeighborsRegressor-ls-loading-output-2", component_property="children"),
+    Input(component_id='KNeighborsRegressor_button_CrossValidation',component_property='n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State(component_id='num_variables',component_property='data'),
+    State(component_id='KNeighborsRegressor_n_neighbors',component_property='value'),
+    State(component_id='KNeighborsRegressor_weights',component_property='value'),
+    State(component_id='KNeighborsRegressor_algorithm',component_property='value'),
+    State(component_id='KNeighborsRegressor_leaf_size',component_property='value'),
+    State(component_id='KNeighborsRegressor_p',component_property='value'),
+    State(component_id='KNeighborsRegressor_metric',component_property='value'),
+    State(component_id='KNeighborsRegressor_centrer_reduire',component_property='value'),
+    State(component_id='KNeighborsRegressor_cv_number_of_folds',component_property='value'),
+    State(component_id='KNeighborsRegressor_cv_scoring',component_property='value'))
+def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,algorithm,leaf_size,p,metric,centrer_reduire,cv_number_of_folds,cv_scoring):
+    if (n_clicks == 0):
+        return "",""
+    else:
+        t1 = time.time()
+        df = get_pandas_dataframe(file)
+        check_type_heterogeneity = all(element in num_variables for element in features)
+        if check_type_heterogeneity == False:
+            bin = binariser(df=df,features=features,target=target)
+            df = bin[0]
+            features = bin[1]
+        if centrer_reduire == ['yes']:
+            X = centrer_reduire_norm(df=df,features=features)
+        else:
+            X = df[features]
+        Y= df[target]
+        clf = build_KNeighborsRegressor(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric)
+        res = cross_validation(clf=clf,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
+        t2 = time.time()
+        diff = t2 - t1
+        return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{:.2f}".format(mean(res))],style={'color': 'green'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
 
 ########################################################################################################
 # (KNeighborsClassifier)
@@ -553,175 +724,6 @@ def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,alg
             return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{}".format(res)],style={'color': 'red'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
         else:
             return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{:.2f}".format(mean(res))],style={'color': 'green'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
-
-
-########################################################################################################
-# (KNeighborsRegressor)
-
-# GridSearchCV
-@app.callback(
-    Output(component_id='res_KNeighborsRegressor_GridSearchCV',component_property='children'),
-    Output(component_id="KNeighborsRegressor-ls-loading-output-1", component_property="children"),
-    Input(component_id='KNeighborsRegressor_button_GridSearchCV',component_property='n_clicks'),
-    State(component_id='file_selection',component_property='value'),
-    State(component_id='target_selection',component_property='value'),
-    State(component_id='features_selection',component_property='value'),
-    State(component_id='num_variables',component_property='data'),
-    State(component_id='KNeighborsRegressor_centrer_reduire',component_property='value'),
-    State(component_id='KNeighborsRegressor_GridSearchCV_number_of_folds',component_property='value'),
-    State(component_id='KNeighborsRegressor_GridSearchCV_scoring',component_property='value'),
-    State(component_id='KNeighborsRegressor_GridSearchCV_njobs',component_property='value'))
-def GridSearchCV_score(n_clicks,file,target,features,num_variables,centrer_reduire,GridSearchCV_number_of_folds,GridSearchCV_scoring,njobs):
-    if (n_clicks == 0):
-        return "",""
-    else:
-        t1 = time.time()
-        if njobs == "None":
-            njobs = None
-        df = get_pandas_dataframe(file)
-        check_type_heterogeneity = all(element in num_variables for element in features)
-        if check_type_heterogeneity == False:
-            bin = binariser(df=df,features=features,target=target)
-            df = bin[0]
-            features = bin[1]
-        if centrer_reduire == ['yes']:
-            X = centrer_reduire_norm(df=df,features=features)
-        else:
-            X = df[features]
-        Y= df[target]
-        params = {'n_neighbors':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], 'weights':["uniform","distance"], 'algorithm':["auto","brute"], 'leaf_size':[5,10,20,30,40], 'p':[1,2], 'metric':["minkowski","euclidean","manhattan"]}
-        grid_search = get_best_params(X=X,Y=Y,clf="KNeighborsRegressor",params=params,cv=GridSearchCV_number_of_folds,scoring=GridSearchCV_scoring,njobs=njobs)
-        t2 = time.time()
-        diff = t2 - t1
-        return html.Div(["GridSearchCV paramètres optimaux : {}".format(grid_search.best_params_),html.Br(),html.Br(),"GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.2f}".format(grid_search.best_score_)],style={'color': 'blue'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
-
-# FitPredict
-@app.callback(
-    Output(component_id='res_KNeighborsRegressor_FitPredict',component_property='children'),
-    Output(component_id="KNeighborsRegressor-ls-loading-output-3", component_property="children"),
-    Input(component_id='KNeighborsRegressor_button_FitPredict',component_property='n_clicks'),
-    State(component_id='file_selection',component_property='value'),
-    State(component_id='target_selection',component_property='value'),
-    State(component_id='features_selection',component_property='value'),
-    State(component_id='num_variables',component_property='data'),
-    State(component_id='KNeighborsRegressor_n_neighbors',component_property='value'),
-    State(component_id='KNeighborsRegressor_weights',component_property='value'),
-    State(component_id='KNeighborsRegressor_algorithm',component_property='value'),
-    State(component_id='KNeighborsRegressor_leaf_size',component_property='value'),
-    State(component_id='KNeighborsRegressor_p',component_property='value'),
-    State(component_id='KNeighborsRegressor_metric',component_property='value'),
-    State(component_id='KNeighborsRegressor_centrer_reduire',component_property='value'),
-    State(component_id='KNeighborsRegressor_test_size',component_property='value'),
-    State(component_id='KNeighborsRegressor_shuffle',component_property='value'))
-def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,algorithm,leaf_size,p,metric,centrer_reduire,test_size,shuffle):
-    if (n_clicks == 0):
-        return "",""
-    else:
-        t1 = time.time()
-        df = get_pandas_dataframe(file)
-        check_type_heterogeneity = all(element in num_variables for element in features)
-        if check_type_heterogeneity == False:
-            bin = binariser(df=df,features=features,target=target)
-            df = bin[0]
-            features = bin[1]
-        if centrer_reduire == ['yes']:
-            X = centrer_reduire_norm(df=df,features=features)
-        else:
-            X = df[features]
-        Y= df[target]
-        clf = build_KNeighborsRegressor(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric)
-        if shuffle == "True":
-            shuffle = True
-        if shuffle == "False":
-            shuffle = False
-        X_train,X_test,y_train,y_test = train_test_split(X,Y,test_size=float(test_size),shuffle=shuffle)
-        clf.fit(X_train.values,y_train.values)
-        y_pred = clf.predict(X_test.values)
-        t2 = time.time()
-        diff = t2 - t1
-
-        #print(pd.concat([,y_pred],axis=1))
-        #fig_y_pred = px.scatter(x=, y=,color_discrete_sequence=['blue'],opacity=0.5)
-        #fig_y_test = px.scatter(x=X_test.iloc[:,0], y=y_test,color_discrete_sequence=['red'],opacity=0.5)
-        #fig_all = go.Figure(data=fig_y_pred.data + fig_y_test.data, name="Name of Trace 2")
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=X_test.iloc[:,0],
-            y=y_pred,
-            mode='markers',
-            name='y_pred',
-            marker={'size': 8, "opacity":0.8}
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=X_test.iloc[:,0],
-            y=y_test,
-            mode='markers',
-            name='y_test',
-            marker={'size': 8, "opacity":0.5}
-        ))
-
-        fig.update_layout(
-            title="Comparaison des points prédits avec les points tests",
-            xaxis_title="X",
-            yaxis_title="Y",
-            legend_title="",
-            font=dict(
-                family="Courier New, monospace",
-                size=12,
-                color="black"
-            )
-        )
-
-        return html.Div([html.B("Carré moyen des erreurs (MSE) "),": {:.2f}".format(mean_squared_error(y_test, y_pred)),html.Br(),html.Br(),
-                         html.B("Erreur quadratique moyenne (RMSE) "),": {:.2f}".format(sqrt(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),
-                         html.B("Coéfficient de détermination (R2) "),": {:.2f}".format(r2_score(y_test, y_pred)),html.Br(),html.Br(),
-                         "temps : {:.2f} sec".format(diff),html.Br(),html.Br(),
-                         dcc.Graph(id='res_KNeighborsRegressor_FitPredict_knngraph', figure=fig),html.Br(),html.Br(),
-                         ]),""
-
-
-# CrossValidation
-@app.callback(
-    Output(component_id='res_KNeighborsRegressor_CrossValidation',component_property='children'),
-    Output(component_id="KNeighborsRegressor-ls-loading-output-2", component_property="children"),
-    Input(component_id='KNeighborsRegressor_button_CrossValidation',component_property='n_clicks'),
-    State(component_id='file_selection',component_property='value'),
-    State(component_id='target_selection',component_property='value'),
-    State(component_id='features_selection',component_property='value'),
-    State(component_id='num_variables',component_property='data'),
-    State(component_id='KNeighborsRegressor_n_neighbors',component_property='value'),
-    State(component_id='KNeighborsRegressor_weights',component_property='value'),
-    State(component_id='KNeighborsRegressor_algorithm',component_property='value'),
-    State(component_id='KNeighborsRegressor_leaf_size',component_property='value'),
-    State(component_id='KNeighborsRegressor_p',component_property='value'),
-    State(component_id='KNeighborsRegressor_metric',component_property='value'),
-    State(component_id='KNeighborsRegressor_centrer_reduire',component_property='value'),
-    State(component_id='KNeighborsRegressor_cv_number_of_folds',component_property='value'),
-    State(component_id='KNeighborsRegressor_cv_scoring',component_property='value'))
-def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,algorithm,leaf_size,p,metric,centrer_reduire,cv_number_of_folds,cv_scoring):
-    if (n_clicks == 0):
-        return "",""
-    else:
-        t1 = time.time()
-        df = get_pandas_dataframe(file)
-        check_type_heterogeneity = all(element in num_variables for element in features)
-        if check_type_heterogeneity == False:
-            bin = binariser(df=df,features=features,target=target)
-            df = bin[0]
-            features = bin[1]
-        if centrer_reduire == ['yes']:
-            X = centrer_reduire_norm(df=df,features=features)
-        else:
-            X = df[features]
-        Y= df[target]
-        clf = build_KNeighborsRegressor(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric)
-        res = cross_validation(clf=clf,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
-        t2 = time.time()
-        diff = t2 - t1
-        return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{:.2f}".format(mean(res))],style={'color': 'green'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
 
 
 
