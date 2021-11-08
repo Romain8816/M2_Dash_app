@@ -290,7 +290,15 @@ def stats_descrip(file,features,target,num_var):
 # (Régression) SVM
 
 # Gridsearch
+                    #   dcc.Loading(
+                    #         id="svr-ls-loading-1", 
+                    #         children=[html.Div(id="svr-ls-loading-output-1")], 
+                    #         type="default"
+                    #     ),
+
+
 @app.callback(
+    #Output(component_id='svr-ls-loading-output-1',component_property='children'),
     Output(component_id='res_svr_GridSearchCV',component_property='children'),   # Affichage des meilleurs paramètres 
     Input(component_id='svr_button_GridSearchCV',component_property='n_clicks'), # Validation du Gridsearch
     State(component_id='file_selection',component_property='value'),
@@ -306,6 +314,7 @@ def GridsearchSVM (n_clicks,file,target,features,train_size,k_fold,n_jobs,metric
     if (n_clicks==0):
         PreventUpdate
     else:
+        t1 = time.time()
         df = get_pandas_dataframe(file)
         X= df[features]
         y= df[target]
@@ -327,15 +336,24 @@ def GridsearchSVM (n_clicks,file,target,features,train_size,k_fold,n_jobs,metric
             'svr__kernel':['linear','poly','rbf','sigmoid'],
             'svr__degree': [i for i in range(1,6)],
             'svr__gamma': ['scale','auto'],
-            'svr__coef0': [i for i in np.arange(0.1,1,0.1)],
-            'svr__C' : [i for i in np.arange(0.1,1,0.1)],
-            'svr__epsilon' : [i for i in np.arange(0.1,1,0.1)]
+            'svr__coef0': [i for i in np.arange(0.1,1,0.2)],
+            'svr__C' : [i for i in np.arange(0.1,1,0.2)],
+            'svr__epsilon' : [i for i in np.arange(0.1,1,0.2)]
         }
         grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=n_jobs)
         grid.fit(X_train,y_train)
-        print('hello')
-        print(grid.best_params_)
-        return (html.P(grid.best_params_))
+
+        t2 = time.time()
+        diff = t2 - t1
+
+        y_pred = grid.predict(X_test)
+
+        return (
+            [
+                html.P("Paramètres optimaux : {}".format(grid.best_params_)),
+                html.P("Meilleur score : {}".format(grid.best_score_))
+            ]
+        )
 
 
 

@@ -371,11 +371,7 @@ regression_svm = dbc.Card(
                         ),html.Br(),html.Br(),
 
                         dbc.Button("valider GridSearchCV",color ="info",id='svr_button_GridSearchCV',n_clicks=0),
-                        dcc.Loading(
-                            id="svr-ls-loading-1", 
-                            children=[html.Div(id="svr-ls-loading-output-1")], 
-                            type="default"
-                        ),
+                        
                         html.Br(),html.Hr(),
                         
                         html.H4(html.B("Paramètrage du modèle et Fit & Predict :")),html.Br(),
@@ -438,14 +434,7 @@ regression_svm = dbc.Card(
                                 dbc.Col(
                                     [
                                         dbc.Label("Degré (pour noyau polynomial)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
-                                        dbc.Input(
-                                            id='svm_degre',
-                                            type='number',
-                                            min=0,
-                                            max=4,
-                                            step=1,
-                                            value=0,
-                                        ),
+                                        dbc.Input(id='svm_degre',type='number',min=0,max=4,step=1,value=0,),
                                     ],
                                 )
                             ]
@@ -458,14 +447,7 @@ regression_svm = dbc.Card(
                                 dbc.Col(
                                     [
                                         dbc.Label("Régularisation (C)", html_for="svm_regularisation_selection",style={'font-weight': 'bold'}),
-                                        dbc.Input(
-                                            id='svm_regularisation_selection',
-                                            type='number',
-                                            min=0,
-                                            max=100,
-                                            step=0.1,
-                                            value=0.1,
-                                        ),
+                                        dbc.Input(id='svm_regularisation_selection',type='number',min=0,max=100,step=0.1,value=0.1,),
                                     ],
                                 ),
                             ],style={'margin-bottom': '1em'}
@@ -477,15 +459,7 @@ regression_svm = dbc.Card(
                                 dbc.Col(
                                     [
                                         dbc.Label("Epsilon (ε)",html_for='svm_epsilon',style={'font-weight': 'bold'}),
-                                        dbc.Input(
-                                            id='svm_epsilon',
-                                            type='number',
-                                            value=0.1,
-                                            min=0,
-                                            max=100,
-                                            step=0.1,
-                                            #className="col-2"
-                                        ),
+                                        dbc.Input(id='svm_epsilon',type='number',value=0.1,min=0,max=100,step=0.1),
                                     ],
                                 )
                             ]
@@ -497,7 +471,12 @@ regression_svm = dbc.Card(
                 html.Div(
                     [
                         html.H3(html.B("Résultats :")),html.Hr(),
-                        html.Div(id="res_svr_GridSearchCV"),html.Br(),html.Hr(),
+                        dcc.Loading(
+                            id="svr-ls-loading-1", 
+                            children=[html.Div(id="res_svr_GridSearchCV")], 
+                            type="default"
+                        ),
+                        #html.Div(id="res_svr_GridSearchCV"),html.Br(),html.Hr(),
                         html.Div(id="res_KNeighborsRegressor_FitPredict"),html.Br(),html.Hr(),
                         html.Div(id="res_KNeighborsRegressor_CrossValidation")
                     ],
@@ -561,7 +540,10 @@ regression_KNeighborsRegressor = dbc.Card(
                 ),html.Br(),html.Br(),
 
                 dbc.Button("valider GridSearchCV", color="info",id='KNeighborsRegressor_button_GridSearchCV',n_clicks=0),
-                dcc.Loading(id="KNeighborsRegressor-ls-loading-1", children=[html.Div(id="KNeighborsRegressor-ls-loading-output-1")], type="default"),html.Br(),html.Hr(),html.Br(),
+                dcc.Loading(
+                    id="KNeighborsRegressor-ls-loading-1", 
+                    children=[html.Div(id="KNeighborsRegressor-ls-loading-output-1")], type="default"
+                ),html.Br(),html.Hr(),html.Br(),
                 
                 html.H4(html.B("Paramètrage du modèle et Fit & Predict :")),html.Br(),html.Br(),
                 html.B("n_neighbors "),html.I("par défaut=5"),html.Br(),html.P("Nombre de voisins à utiliser par défaut pour les requêtes de voisins.", className="card-text"),
