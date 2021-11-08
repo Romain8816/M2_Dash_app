@@ -8,6 +8,7 @@ from dash_bootstrap_components._components.Collapse import Collapse
 from dash_bootstrap_components._components.Row import Row
 from numpy.random.mtrand import random_integers
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 from dash.dependencies import Input,Output,State
 import os
@@ -44,6 +45,10 @@ from fonctions.algo_functions import build_kmeans
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn import svm
 from sklearn import metrics
+from sklearn.metrics import make_scorer, mean_squared_error, r2_score
+
+
+import time
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_callback_exceptions=True)
 app.title="Machine Learning App"
@@ -535,6 +540,212 @@ def CV_score(n_clicks,file,target,features,criterion,splitter,max_depth,min_samp
         #clf = DecisionTreeClassifier()
         res = cross_validation(clf=tree,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
         print(res[0])
+        return html.Div([
+            "cross validation ",html.B("{} : ".format(cv_scoring)),
+            html.B(["{}".format(np.mean(res[0]))],style={'color': 'green'}),html.Br(),
+            html.Br(),"time : {} sec".format(res[1])]),""
+
+###############################################################################
+############### Régression linéaire 
+
+#GridSearch Ok
+@app.callback(
+    Output(component_id='res_Linear_GridSearchCV',component_property='children'),
+    Output(component_id="ls-loading-output-0_linear", component_property="children"),
+    Input(component_id='Linear_button_GridSearchCV',component_property='n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State(component_id='num_variables',component_property='data'),
+    State(component_id='centrer_reduire',component_property='value'),
+    State(component_id='Linear_GridSearchCV_number_of_folds',component_property='value'),
+    State(component_id='Linear_GridSearchCV_scoring',component_property='value'),
+    State(component_id='Linear_GridSearchCV_njobs',component_property='value')) 
+def GridSearch_linear(n_clicks,file,target,features,num_variable,centre_reduit,nb_folds,score,nb_njobs): 
+    if (n_clicks == 0):
+        return "",""
+    else:
+        if nb_njobs == "None":
+            nb_njobs = None
+        
+        
+        df = get_pandas_dataframe(file)
+        check_type_heterogeneity = all(element in num_variable for element in features)
+        if check_type_heterogeneity == False:
+            bin = binariser(df=df,features=features,target=target)
+            df = bin[0]
+            features = bin[1]
+        if centre_reduit == ['yes']:
+            X = centrer_reduire_norm(df=df,features=features)
+        else:
+            X = df[features]
+        y = df.loc[:,target]
+        
+        # défini certain paramètre à utilisé 
+        params = {"fit_intercept":[True,False],"copy_X":[True,False],
+                  "n_jobs":[None,1,2,5,10],"positive":[True,False]}
+        grid_search = get_best_params(X, y, "Regression lineaire", params, cv=nb_folds, scoring=score,njobs=nb_njobs)
+        print(grid_search[0].best_params_)
+        return html.Div(
+            ["GridSearchCV best parameters : {}".format(grid_search[0].best_params_),
+             html.Br(),html.Br(),"GridSearchCV best",
+             html.B(" {} ".format(score)),": ",
+             html.B(["{}".format(grid_search[0].best_score_)],
+                    style={'color': 'blue'}),html.Br(),
+             html.Br(),"time : {} sec".format(grid_search[1])]),""
+
+# fit -predit (Ok juste peut etre problème de metric)
+@app.callback(
+    Output(component_id='res_Linear_FitPredict', component_property='children'),
+    Output(component_id='ls-loading-output-1_Linear', component_property='children'),
+    Input('Linear_button_FitPredict','n_clicks'),
+    [State('model_selection','value'),
+    State('target_selection','value'),
+    State('features_selection','value'),
+    State('num_variables','data'),
+    State('file_selection','value'),
+    State('centrer_reduire','value'),
+    State('fit_intercept','value'),
+    State('copy_X','value'),
+    State('n_jobs','value')])
+def fit_predict_functionlinear(n_clicks,model,target,feature,num_variable,file,centre_reduire,fit_intercept,copy_X,n_jobs):
+    #creation du dataframe
+
+    if n_clicks == 0:
+        print(n_clicks)
+        raise PreventUpdate
+    else :
+        t1 = time.time()
+        #print(n_clicks)
+        df = get_pandas_dataframe(file)
+        check_type_heterogeneity = all(element in num_variable for element in feature)
+        
+        if check_type_heterogeneity == False:
+            bin = binariser(df=df,features=feature,target=target)
+            df = bin[0]
+            features = bin[1]
+        if centre_reduire == ['yes']:
+            X = centrer_reduire_norm(df=df,features=features)
+        else:
+            X = df[features]
+
+            # prendre en compte le parametre None
+        if fit_intercept == 'True':
+            fit_intercept = True
+        else : 
+            fit_intercept = False
+        
+        if copy_X == 'True':
+            copy_X = True
+        else : 
+            copy_X = False
+
+        
+       
+        y = df.loc[:,target]
+        
+        # separt en test et apprentissage
+        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size = 0.3, random_state=0)
+        
+        
+        #creation du model
+        LinearReg = buid_linearReg(fit_intercept, copy_X, n_jobs)
+        LinearReg.fit(X_train,y_train)
+        #prediction 
+        
+        y_pred = LinearReg.predict(X_test)
+        #affichage graphique des prédictions réalisé 
+        t2 = time.time()
+        # affichage l'arbre sortie graphique 
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=X_test.iloc[:,0],
+            y=y_pred,
+            mode='markers',
+            name='y_pred',
+            marker={'size': 8, "opacity":0.8}
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=X_test.iloc[:,0],
+            y=y_test,
+            mode='markers',
+            name='y_test',
+            marker={'size': 8, "opacity":0.5}
+        ))
+
+        fig.update_layout(
+            title="Comparaison des points prédits avec les points tests",
+            xaxis_title="X",
+            yaxis_title="Y",
+            legend_title="",
+            font=dict(
+                family="Courier New, monospace",
+                size=12,
+                color="black"
+            )
+        )
+        diff = t2-t1
+        return html.Div([
+            html.B("Carré moyen des erreurs (MSE) "),": {:.2f}".format(mean_squared_error(y_test, y_pred)),html.Br(),html.Br(),
+            html.B("Erreur quadratique moyenne (RMSE) "),": {:.2f}".format(np.sqrt(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),
+            html.B("Coéfficient de détermination (R2) "),": {:.2f}".format(r2_score(y_test, y_pred)),html.Br(),html.Br(),
+            "temps : {:.2f} sec".format(diff),html.Br(),html.Br(),
+            dcc.Graph(id='res_Linear_FitPredict_graph', figure=fig),html.Br(),html.Br(),
+                         ]),""
+
+
+# Cross Validation (Ok )
+@app.callback(
+    Output(component_id='res_Linear_CrossValidation',component_property='children'),
+    Output(component_id="ls-loading-output-2_Linear", component_property="children"),
+    Input(component_id='Linear_button_CrossValidation',component_property='n_clicks'),
+    State(component_id='file_selection',component_property='value'),
+    State(component_id='target_selection',component_property='value'),
+    State(component_id='features_selection',component_property='value'),
+    State('num_variables','data'),
+    State('centrer_reduire','value'),
+    State('fit_intercept','value'),
+    State('copy_X','value'),
+    State('n_jobs','value'),
+    State(component_id='Linear_cv_number_of_folds',component_property='value'),
+    State(component_id='Linear_cv_scoring',component_property='value'))
+def CV_score_linear(n_clicks,file,target,features,num_variable,centre_reduire,fit_intercept,copy_X,n_jobs,cv_number_of_folds,cv_scoring):
+    if (n_clicks == 0):
+        return "",""
+    else:
+        
+        if fit_intercept == 'True':
+            fit_intercept = True
+        else : 
+            fit_intercept = False
+        
+        if copy_X == 'True':
+            copy_X = True
+        else : 
+            copy_X = False
+
+        
+        df = get_pandas_dataframe(file)
+        
+        check_type_heterogeneity = all(element in num_variable for element in features)
+        
+        if check_type_heterogeneity == False:
+            bin = binariser(df=df,features=features,target=target)
+            df = bin[0]
+            features = bin[1]
+        if centre_reduire == ['yes']:
+            X = centrer_reduire_norm(df=df,features=features)
+        else:
+            X = df[features]
+
+        Y= df[target]
+        
+        LinearReg = buid_linearReg(fit_intercept, copy_X, n_jobs)
+        
+        res = cross_validation(clf=LinearReg,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
+        
         return html.Div([
             "cross validation ",html.B("{} : ".format(cv_scoring)),
             html.B(["{}".format(np.mean(res[0]))],style={'color': 'green'}),html.Br(),
