@@ -56,8 +56,10 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn import svm
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score
-from math import sqrt
+from math import log, sqrt
 from matplotlib import pyplot
+
+from callbacks import svr_callbacks, log_callbacks
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_callback_exceptions=True)
 app.title="Machine Learning App"
@@ -288,139 +290,16 @@ def stats_descrip(file,features,target,num_var):
 
 ########################################################################################################
 # (Régression) SVM
+svr_callbacks.Gridsearch(app)
+svr_callbacks.fit_predict(app)
 
-# Gridsearch
-                    #   dcc.Loading(
-                    #         id="svr-ls-loading-1", 
-                    #         children=[html.Div(id="svr-ls-loading-output-1")], 
-                    #         type="default"
-                    #     ),
-
-
-@app.callback(
-    #Output(component_id='svr-ls-loading-output-1',component_property='children'),
-    Output(component_id='res_svr_GridSearchCV',component_property='children'),   # Affichage des meilleurs paramètres 
-    Input(component_id='svr_button_GridSearchCV',component_property='n_clicks'), # Validation du Gridsearch
-    State(component_id='file_selection',component_property='value'),
-    State(component_id='target_selection',component_property='value'),
-    State(component_id='features_selection',component_property='value'),
-    State(component_id='train_size',component_property='value'),
-    State(component_id='svr_gridCV_k_folds',component_property='value'),
-    State(component_id='svr_GridSearchCV_njobs',component_property='value'),
-    State(component_id='svr_gridCV_scoring',component_property='value'))
-
-def GridsearchSVM (n_clicks,file,target,features,train_size,k_fold,n_jobs,metric):
-    
-    if (n_clicks==0):
-        PreventUpdate
-    else:
-        t1 = time.time()
-        df = get_pandas_dataframe(file)
-        X= df[features]
-        y= df[target]
-        
-        X_train,X_test,y_train,y_test = train_test_split(X,y,train_size=train_size)
-
-        numerical_features = make_column_selector(dtype_include=np.number)
-        categorical_features = make_column_selector(dtype_exclude=np.number)
-
-        categorical_pipeline = make_pipeline(SimpleImputer(strategy='most_frequent'),OneHotEncoder(drop='first',sparse=False))
-        numerical_pipeline = make_pipeline(SimpleImputer(),StandardScaler())
-
-        preprocessor = make_column_transformer((numerical_pipeline,numerical_features),
-                                            (categorical_pipeline,categorical_features))
-
-
-        model = make_pipeline(preprocessor,SVR())
-        params = {
-            'svr__kernel':['linear','poly','rbf','sigmoid'],
-            'svr__degree': [i for i in range(1,6)],
-            'svr__gamma': ['scale','auto'],
-            'svr__coef0': [i for i in np.arange(0.1,1,0.2)],
-            'svr__C' : [i for i in np.arange(0.1,1,0.2)],
-            'svr__epsilon' : [i for i in np.arange(0.1,1,0.2)]
-        }
-        grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=n_jobs)
-        grid.fit(X_train,y_train)
-
-        t2 = time.time()
-        diff = t2 - t1
-
-        y_pred = grid.predict(X_test)
-
-        return (
-            [
-                html.P("Paramètres optimaux : {}".format(grid.best_params_)),
-                html.P("Meilleur score : {}".format(grid.best_score_))
-            ]
-        )
-
-
-
-
-# Fit et predict 
-@app.callback(
-    Output('res_svm','children'),
-    Input('smv_button','n_clicks'),
-    State(component_id='file_selection',component_property='value'),
-    State(component_id='target_selection',component_property='value'),
-    State(component_id='features_selection',component_property='value'),
-    State(component_id='test_size',component_property='value'),
-    State(component_id='random_state',component_property='value'),
-    State(component_id='k_fold',component_property='value'),
-    State(component_id='svm_kernel_selection',component_property='value'),          # Noyau
-    State(component_id='svm_regularisation_selection',component_property='value'),  # C
-    State(component_id='svm_epsilon',component_property='value'),
-    State('svm_degre','value'))
-
-def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon,degre):
-
-    if (n_clicks == 0):
-        PreventUpdate
-    else:
-        df = get_pandas_dataframe(file)
-
-        X= df[features]
-        y= df[target]
-
-        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state)
-
-        model = build_smv(kernel,regularisation,epsilon)
-        score = cross_validate(model,X_train,y_train,cv=k_fold,scoring=('r2','neg_mean_squared_error'),return_train_score=True)
-
-        rsquared = score['test_r2'].mean()
-        mse = score['test_neg_mean_squared_error'].mean()
-
-        model.fit(X_train,y_train)
-        y_pred = model.predict(X_test)
-
-        fig = px.imshow(df.corr())
-        
-        #fig = px.scatter_matrix(df,dimensions=features)
-
-        # train_score, val_score = validation_curve(model,X_train,y_train,param_name='svr__C',param_range=np.arange(0,100),cv=k_fold)
-        
-        # fig = go.Figure()
-
-        # fig.add_trace(go.Scatter(x=np.arange(0,100), y=val_score.mean(axis=1),mode='lines',name='validation score'))
-        # fig.add_trace(go.Scatter(x=np.arange(0,100), y=train_score.mean(axis=1),mode='lines',name='training score'))
-        # fig.update_layout(title="Score en fonction de C")
-
-        return [    
-                    html.Div(
-                        [
-                            dbc.Label("Validation score"),
-                            html.P('R² : '+str(rsquared)),
-                            html.P('MSE : '+str(mse))
-                        ]
-                    ),
-                    dcc.Graph(figure=fig)
-                ]
-
+########################################################################################################
+# (Classification) Régression logistique
+log_callbacks.Gridsearch(app)
 
 
 ########################################################################################################
-# (KNeighborsRegressor)
+# (Régression) KNeighborsRegressor
 
 # GridSearchCV
 @app.callback(
@@ -590,7 +469,13 @@ def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,alg
         return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{:.2f}".format(mean(res))],style={'color': 'green'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
 
 ########################################################################################################
-# (KNeighborsClassifier)
+# (Classification) Régression logistique
+
+
+
+
+
+# (Classification) KNeighborsClassifier
 
 # GridSearchCV
 @app.callback(
