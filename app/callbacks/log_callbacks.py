@@ -86,7 +86,7 @@ def Gridsearch(app):
                 'clf__C' : [i for i in np.arange(0.1,2,0.2)],
             }
 
-            print(clf.get_params().keys())
+            #print(clf.get_params().keys())
             grid = GridSearchCV(model,params,cv=k_fold,n_jobs=n_jobs,scoring=metric)
             grid.fit(X_train,y_train)
 
