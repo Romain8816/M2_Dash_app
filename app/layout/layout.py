@@ -520,10 +520,11 @@ Regession_regression_lineaire = dbc.Card(
                         id='Linear_GridSearchCV_scoring',
                         options=[
                             {'label': "MSE", 'value': "MSE"},
-                            {'label': "R2", 'value': "r2"}
+                            {'label': "MAE", 'value': "MAE"},
+                            {'label':"RMSE",'value':'RMSE'}
                             
                         ],
-                        value = 'r2'
+                        value = 'MSE'
                     ),html.Br(),html.Br(),
                     html.B("GridSearchCV_njobs "),html.I("par défaut=-1"),html.Br(),
                     html.P("Selectionner le nombre de coeurs (-1 = tous les coeurs)", className="card-text"),
@@ -591,10 +592,11 @@ Regession_regression_lineaire = dbc.Card(
                         id='Linear_cv_scoring',
                         options=[
                             {'label': "MSE", 'value': "MSE"},
-                            {'label': "R2", 'value': "r2"},
+                            {'label': "MAE", 'value': "MAE"},
+                            {'label':"RMSE",'value':'RMSE'}
                             
                         ],
-                        value = 'r2'
+                        value = 'MSE'
                     ),html.Br(),html.Hr(),
                     dbc.Button("Valider CrossValidation", color="success",id='Linear_button_CrossValidation',n_clicks=0),
                     dcc.Loading(id="ls-loading-2_Linear", children=[html.Div(id="ls-loading-output-2_Linear")], type="default")

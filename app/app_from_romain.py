@@ -33,6 +33,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score,precision_score,recall_score,roc_curve,auc,f1_score
 import matplotlib.pyplot as plt
+from scipy import stats
 
 #from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection #, kmeans_params_and_results
 #from layout.layout import regression_tabs, classification_tabs
@@ -362,7 +363,7 @@ def ShowModelAttributes(n_clicks,file_path,target,features,n_clusters,init,n_ini
     Output(component_id='kmeans_explore_object_display',component_property='children'),
     Input(component_id='kmeans_explore_object',component_property='value'))
 def ShowKmeansObjectAttributes(kmeans_object_value):
-    print(kmeans_object_value)
+    #print(kmeans_object_value)
     return html.P(kmeans_object_value)
 
 #########################################################################
@@ -403,9 +404,9 @@ def GridSearch_tree(n_clicks,file,target,features,nb_folds,score,nb_njobs):
             ["GridSearchCV best parameters : {}".format(grid_search[0].best_params_),
              html.Br(),html.Br(),"GridSearchCV best",
              html.B(" {} ".format(score)),": ",
-             html.B(["{}".format(grid_search[0].best_score_)],
+             html.B(["{:.2f}".format(grid_search[0].best_score_)],
                     style={'color': 'blue'}),html.Br(),
-             html.Br(),"time : {} sec".format(grid_search[1])]),""
+             html.Br(),"time : {:.2f} sec".format(grid_search[1])]),""
 
 # fit -predit (Ok + affichage de l'arbre)
 @app.callback(
@@ -429,7 +430,7 @@ def fit_predict_function(n_clicks,plot_clicks,model,target,feature,file,criterio
     #creation du dataframe
 
     if n_clicks == 0:
-        print(n_clicks)
+        #print(n_clicks)
         raise PreventUpdate
     else :
         t1 = time.time()
@@ -539,7 +540,7 @@ def CV_score(n_clicks,file,target,features,criterion,splitter,max_depth,min_samp
         tree = build_tree(criterion, splitter, max_depth, min_samples_split,min_samples_leaf,max_leaf_nodes)
         #clf = DecisionTreeClassifier()
         res = cross_validation(clf=tree,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
-        print(res[0])
+        #print(res[0])
         return html.Div([
             "cross validation ",html.B("{} : ".format(cv_scoring)),
             html.B(["{}".format(np.mean(res[0]))],style={'color': 'green'}),html.Br(),
@@ -568,7 +569,10 @@ def GridSearch_linear(n_clicks,file,target,features,num_variable,centre_reduit,n
         if nb_njobs == "None":
             nb_njobs = None
         
-        
+        if score == "RMSE" or score == "MSE": 
+            scoring = 'neg_mean_squared_error'
+        else :
+            scoring = 'neg_mean_absolute_error' 
         df = get_pandas_dataframe(file)
         check_type_heterogeneity = all(element in num_variable for element in features)
         if check_type_heterogeneity == False:
@@ -584,15 +588,24 @@ def GridSearch_linear(n_clicks,file,target,features,num_variable,centre_reduit,n
         # défini certain paramètre à utilisé 
         params = {"fit_intercept":[True,False],"copy_X":[True,False],
                   "n_jobs":[None,1,2,5,10],"positive":[True,False]}
-        grid_search = get_best_params(X, y, "Regression lineaire", params, cv=nb_folds, scoring=score,njobs=nb_njobs)
-        print(grid_search[0].best_params_)
+        grid_search = get_best_params(X, y, "Regression lineaire", params, cv=nb_folds, scoring=scoring,njobs=nb_njobs)
+        
+        
+        if score == "RMSE": 
+            sc = np.sqrt(abs(grid_search[0].best_score_))
+            score == "RMSE"
+        else : 
+            sc = abs(grid_search[0].best_score_)
+        
+        
+        #print(grid_search[0].best_params_)
         return html.Div(
             ["GridSearchCV best parameters : {}".format(grid_search[0].best_params_),
              html.Br(),html.Br(),"GridSearchCV best",
              html.B(" {} ".format(score)),": ",
-             html.B(["{}".format(grid_search[0].best_score_)],
+             html.B(["{:.2f}".format(sc)],
                     style={'color': 'blue'}),html.Br(),
-             html.Br(),"time : {} sec".format(grid_search[1])]),""
+             html.Br(),"time : {:.2f} sec".format(grid_search[1])]),""
 
 # fit -predit (Ok juste peut etre problème de metric)
 @app.callback(
@@ -608,20 +621,20 @@ def GridSearch_linear(n_clicks,file,target,features,num_variable,centre_reduit,n
     State('fit_intercept','value'),
     State('copy_X','value'),
     State('n_jobs','value')])
-def fit_predict_functionlinear(n_clicks,model,target,feature,num_variable,file,centre_reduire,fit_intercept,copy_X,n_jobs):
+def fit_predict_functionlinear(n_clicks,model,target,features,num_variable,file,centre_reduire,fit_intercept,copy_X,n_jobs):
     #creation du dataframe
 
     if n_clicks == 0:
-        print(n_clicks)
+        #print(n_clicks)
         raise PreventUpdate
     else :
         t1 = time.time()
         #print(n_clicks)
         df = get_pandas_dataframe(file)
-        check_type_heterogeneity = all(element in num_variable for element in feature)
+        check_type_heterogeneity = all(element in num_variable for element in features)
         
         if check_type_heterogeneity == False:
-            bin = binariser(df=df,features=feature,target=target)
+            bin = binariser(df=df,features=features,target=target)
             df = bin[0]
             features = bin[1]
         if centre_reduire == ['yes']:
@@ -656,7 +669,14 @@ def fit_predict_functionlinear(n_clicks,model,target,feature,num_variable,file,c
         y_pred = LinearReg.predict(X_test)
         #affichage graphique des prédictions réalisé 
         t2 = time.time()
-        # affichage l'arbre sortie graphique 
+        
+        #calcul des coeficient directeur de la droite 
+        def predict(x): 
+            return a * x + b 
+
+        a, b, r_value, p_value, std_err = stats.linregress(X_test.iloc[:,0],y_pred) 
+        fitline = predict(X_test.iloc[:,0])
+
         fig = go.Figure()
 
         fig.add_trace(go.Scatter(
@@ -674,6 +694,10 @@ def fit_predict_functionlinear(n_clicks,model,target,feature,num_variable,file,c
             name='y_test',
             marker={'size': 8, "opacity":0.5}
         ))
+        fig.add_trace(go.Scatter(
+            x=X_test.iloc[:,0],
+            y=fitline,
+            name='regression'))
 
         fig.update_layout(
             title="Comparaison des points prédits avec les points tests",
@@ -693,6 +717,7 @@ def fit_predict_functionlinear(n_clicks,model,target,feature,num_variable,file,c
             html.B("Coéfficient de détermination (R2) "),": {:.2f}".format(r2_score(y_test, y_pred)),html.Br(),html.Br(),
             "temps : {:.2f} sec".format(diff),html.Br(),html.Br(),
             dcc.Graph(id='res_Linear_FitPredict_graph', figure=fig),html.Br(),html.Br(),
+            #dcc.Graph(id='res_regLinear_FitPredict_graph', figure=fig2),html.Br(),html.Br(),
                          ]),""
 
 
@@ -725,7 +750,10 @@ def CV_score_linear(n_clicks,file,target,features,num_variable,centre_reduire,fi
             copy_X = True
         else : 
             copy_X = False
-
+        if cv_scoring == "RMSE" or cv_scoring == "MSE": 
+            scoring = 'neg_mean_squared_error'
+        else :
+            scoring = 'neg_mean_absolute_error' 
         
         df = get_pandas_dataframe(file)
         
@@ -744,12 +772,16 @@ def CV_score_linear(n_clicks,file,target,features,num_variable,centre_reduire,fi
         
         LinearReg = buid_linearReg(fit_intercept, copy_X, n_jobs)
         
-        res = cross_validation(clf=LinearReg,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
-        
+        res = cross_validation(clf=LinearReg,X=X,Y=Y,cv=cv_number_of_folds,scoring=scoring)
+        if cv_scoring == "RMSE": 
+            metric = np.sqrt(abs(np.mean(res[0])))
+        else : 
+            metric = abs(np.mean(res[0]))
+            
         return html.Div([
             "cross validation ",html.B("{} : ".format(cv_scoring)),
-            html.B(["{}".format(np.mean(res[0]))],style={'color': 'green'}),html.Br(),
-            html.Br(),"time : {} sec".format(res[1])]),""
+            html.B(["{:.2f}".format(metric)],style={'color': 'green'}),html.Br(),
+            html.Br(),"time : {:.2f} sec".format(res[1])]),""
 
 
 app.css.append_css({'external_url': './assets/style2.css' # LINUX - MAC-OS

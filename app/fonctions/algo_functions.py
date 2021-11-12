@@ -188,8 +188,5 @@ def cross_validation(clf,X,Y,cv,scoring):
         return cross_val
 
     if str(clf).startswith("LinearRegression"):
-        if scoring == "r2":
-            cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(r2_score,greater_is_better=True))
-        if scoring == "MSE":
-            cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring="neg_mean_squared_error")
+        cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=scoring) 
         return cross_val
