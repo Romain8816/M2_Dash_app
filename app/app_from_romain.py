@@ -66,12 +66,11 @@ from scipy import stats
 
 #from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection #, kmeans_params_and_results
 #from layout.layout import regression_tabs, classification_tabs
-from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection, kmeans_params_and_results
+from layout.layout import location_folder, dataset_selection, target_selection,features_selection
 from layout.layout import regression_tabs, classification_tabs
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
 from fonctions.algo_functions import *
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
-from fonctions.algo_functions import build_kmeans
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn import svm
 from sklearn import metrics

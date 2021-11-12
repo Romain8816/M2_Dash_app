@@ -490,9 +490,6 @@ classification_tabs = dbc.Tabs(
 ########################################################################################################
 # (Régression) Onglets
 
-# Régression linéaire
-
-
 # KNeighborsRegressor
 regression_KNeighborsRegressor = dbc.Card(
     children=[
@@ -636,18 +633,6 @@ regression_KNeighborsRegressor = dbc.Card(
     body=True
 )
 
-# Ensemble des onglets de classification
-classification_tabs = dbc.Tabs(
-    id="classification_tab",
-    children= [
-        dbc.Tab(classification_decision_tree,label="Arbre de décision",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-        #dbc.Tab(classification_SVM,label="SVM",tab_id ='svm',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-        dbc.Tab(classification_KNeighborsClassifier,label="KNeighborsClassifier", tab_id='KNeighborsClassifier',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
-    ]
-)
-
-########################################################################################################
-# (Régression) Onglets
 
 
 # regression linéaire
