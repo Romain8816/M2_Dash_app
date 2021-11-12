@@ -35,7 +35,7 @@ from fonctions.algo_functions import *
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn import svm
 from sklearn import metrics
-from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score
+from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score, mean_absolute_error
 from math import sqrt
 from matplotlib import pyplot
 
@@ -183,7 +183,7 @@ def TargetSelection(target,options,feature_selection_value):
                 [v for v in variables if v!=target]
             )
         else:
-            if len(feature_selection_value) >= 2:
+            if len(feature_selection_value) >= 1:
                 return (
                     [{'label':v, 'value':v} for v in variables if v!=target],
                     [v for v in feature_selection_value if v!=target]
@@ -193,6 +193,7 @@ def TargetSelection(target,options,feature_selection_value):
                     [{'label':v, 'value':v} for v in variables if v!=target],
                     [v for v in variables if v!=target]
                 )
+
 
 ########################################################################################################
 # (INIT) Proposition du/des modèles qu'il est possible de sélectionner selon le type de la variable cible
@@ -331,11 +332,17 @@ def GridSearchCV_score(n_clicks,file,target,features,num_variables,centrer_redui
         params = {'n_neighbors':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], 'weights':["uniform","distance"], 'algorithm':["auto","brute"], 'leaf_size':[5,10,20,30,40], 'p':[1,2], 'metric':["minkowski","euclidean","manhattan"]}
         grid_search = get_best_params(X=X,Y=Y,clf="KNeighborsClassifier",params=params,cv=GridSearchCV_number_of_folds,scoring=GridSearchCV_scoring,njobs=njobs)
         t2 = time.time()
+
+        params_opti = pd.Series(grid_search.best_params_,index=grid_search.best_params_.keys())
+        params_opti = pd.DataFrame(params_opti)
+        params_opti.reset_index(level=0, inplace=True)
+        params_opti.columns = ["paramètres","valeur"]
+
         diff = t2 - t1
         if isinstance(grid_search,str):
-            return html.Div(["GridSearchCV paramètres optimaux : {}".format(grid_search),html.Br(),html.Br(),"GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{}".format(grid_search)],style={'color': 'red'}),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff)]),""
+            return html.Div(["GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),dash_table.DataTable(id='KNeighborsClassifier_params_opti',columns=[{"name": i, "id": i} for i in params_opti.columns],data=params_opti.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in params_opti.columns]),html.Br(),html.Br(),"GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{}".format(grid_search)],style={'color': 'red'}),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff)]),""
         else:
-            return html.Div(["GridSearchCV paramètres optimaux : {}".format(grid_search.best_params_),html.Br(),html.Br(),"GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.2f}".format(grid_search.best_score_)],style={'color': 'blue'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
+            return html.Div(["GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),dash_table.DataTable(id='KNeighborsClassifier_params_opti',columns=[{"name": i, "id": i} for i in params_opti.columns],data=params_opti.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in params_opti.columns]),html.Br(),html.Br(),"GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.2f}".format(grid_search.best_score_)],style={'color': 'blue'}),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff)]),""
 
 # FitPredict
 @app.callback(
@@ -399,11 +406,12 @@ def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,alg
         fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
                          title="PCA du jeu de données {}, y_test".format(file.split("/")[-1]))
         t2 = time.time()
+
         diff = t2 - t1
         if len(set(list(Y))) > 2:
-            return html.Div(["Matrice de confusion : ",html.Br(),dash_table.DataTable(id='KNeighborsClassifier_cm',columns=[{"name": i, "id": i} for i in df_cm.columns],data=df_cm.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],),html.Br(),html.B("f1_score "),"macro {:.2f} , micro {:.2f}, weighted {:.2f}".format(f1_score(y_test, y_pred,average="macro"),f1_score(y_test, y_pred,average="micro"),f1_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),html.B("recall_score "),"macro {:.2f} , micro {:.2f}, weighted {:.2f}".format(recall_score(y_test, y_pred,average="macro"),recall_score(y_test, y_pred,average="micro"),recall_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),html.B("precision_score "),"macro {:.2f} , micro {:.2f}, weighted {:.2f}".format(precision_score(y_test, y_pred,average="macro"),precision_score(y_test, y_pred,average="micro"),precision_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),html.B("accuracy_score ")," {:.2f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),"time : {:.2f} sec".format(diff),html.Br(),dcc.Graph(id='res_KNeighborsClassifier_FitPredict_inputgraph', figure=fig_input_data),dcc.Graph(id='res_KNeighborsClassifier_FitPredict_knngraph', figure=fig_knn)]),""
+            return html.Div(["Matrice de confusion : ",html.Br(),dash_table.DataTable(id='KNeighborsClassifier_cm',columns=[{"name": i, "id": i} for i in df_cm.columns],data=df_cm.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],),html.Br(),html.B("f1_score "),"macro {:.2f} , micro {:.2f}, weighted {:.2f}".format(f1_score(y_test, y_pred,average="macro"),f1_score(y_test, y_pred,average="micro"),f1_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),html.B("recall_score "),"macro {:.2f} , micro {:.2f}, weighted {:.2f}".format(recall_score(y_test, y_pred,average="macro"),recall_score(y_test, y_pred,average="micro"),recall_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),html.B("precision_score "),"macro {:.2f} , micro {:.2f}, weighted {:.2f}".format(precision_score(y_test, y_pred,average="macro"),precision_score(y_test, y_pred,average="micro"),precision_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),html.B("accuracy_score ")," {:.2f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff),html.Br(),dcc.Graph(id='res_KNeighborsClassifier_FitPredict_inputgraph', figure=fig_input_data),dcc.Graph(id='res_KNeighborsClassifier_FitPredict_knngraph', figure=fig_knn)]),""
         else:
-            return html.Div(["Matrice de confusion : ",html.Br(),dash_table.DataTable(id='KNeighborsClassifier_cm',columns=[{"name": i, "id": i} for i in df_cm.columns],data=df_cm.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],),html.Br(),html.B("f1_score "),"binary {:.2f}".format(f1_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(Y))))[0])),html.Br(),html.Br(),html.B("recall_score "),"binary {:.2f}".format(recall_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(Y))))[0])),html.Br(),html.Br(),html.B("precision_score "),"binary {:.2f}".format(precision_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(Y))))[0])),html.Br(),html.Br(),html.B("accuracy_score "),"{:.2f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),"time : {:.2f} sec".format(diff),html.Br(),dcc.Graph(id='res_KNeighborsClassifier_FitPredict_inputgraph', figure=fig_input_data),dcc.Graph(id='res_KNeighborsClassifier_FitPredict_knngraph', figure=fig_knn)]),""
+            return html.Div(["Matrice de confusion : ",html.Br(),dash_table.DataTable(id='KNeighborsClassifier_cm',columns=[{"name": i, "id": i} for i in df_cm.columns],data=df_cm.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],),html.Br(),html.B("f1_score "),"binary {:.2f}".format(f1_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(Y))))[0])),html.Br(),html.Br(),html.B("recall_score "),"binary {:.2f}".format(recall_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(Y))))[0])),html.Br(),html.Br(),html.B("precision_score "),"binary {:.2f}".format(precision_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(Y))))[0])),html.Br(),html.Br(),html.B("accuracy_score "),"{:.2f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff),html.Br(),dcc.Graph(id='res_KNeighborsClassifier_FitPredict_inputgraph', figure=fig_input_data),dcc.Graph(id='res_KNeighborsClassifier_FitPredict_knngraph', figure=fig_knn)]),""
 
 # CrossValidation
 @app.callback(
@@ -444,9 +452,9 @@ def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,alg
         t2 = time.time()
         diff = t2 - t1
         if isinstance(res,str):
-            return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{}".format(res)],style={'color': 'red'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
+            return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{}".format(res)],style={'color': 'red'}),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff)]),""
         else:
-            return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{:.2f}".format(mean(res))],style={'color': 'green'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
+            return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{:.2f}".format(mean(res))],style={'color': 'green'}),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff)]),""
 
 
 ########################################################################################################
@@ -486,8 +494,17 @@ def GridSearchCV_score(n_clicks,file,target,features,num_variables,centrer_redui
         params = {'n_neighbors':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], 'weights':["uniform","distance"], 'algorithm':["auto","brute"], 'leaf_size':[5,10,20,30,40], 'p':[1,2], 'metric':["minkowski","euclidean","manhattan"]}
         grid_search = get_best_params(X=X,Y=Y,clf="KNeighborsRegressor",params=params,cv=GridSearchCV_number_of_folds,scoring=GridSearchCV_scoring,njobs=njobs)
         t2 = time.time()
+
+        params_opti = pd.Series(grid_search.best_params_,index=grid_search.best_params_.keys())
+        params_opti = pd.DataFrame(params_opti)
+        params_opti.reset_index(level=0, inplace=True)
+        params_opti.columns = ["paramètres","valeur"]
+
         diff = t2 - t1
-        return html.Div(["GridSearchCV paramètres optimaux : {}".format(grid_search.best_params_),html.Br(),html.Br(),"GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.2f}".format(grid_search.best_score_)],style={'color': 'blue'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
+        if GridSearchCV_scoring == "RMSE":
+            return html.Div(["GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),dash_table.DataTable(id='KNeighborsClassifier_params_opti',columns=[{"name": i, "id": i} for i in params_opti.columns],data=params_opti.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in params_opti.columns]),html.Br(),html.Br(),"GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.2f}".format(sqrt(abs(grid_search.best_score_)))],style={'color': 'blue'}),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff)]),""
+        else:
+            return html.Div(["GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),dash_table.DataTable(id='KNeighborsClassifier_params_opti',columns=[{"name": i, "id": i} for i in params_opti.columns],data=params_opti.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in params_opti.columns]),html.Br(),html.Br(),"GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.2f}".format(abs(grid_search.best_score_))],style={'color': 'blue'}),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff)]),""
 
 # FitPredict
 @app.callback(
@@ -571,6 +588,7 @@ def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,alg
 
         return html.Div([html.B("Carré moyen des erreurs (MSE) "),": {:.2f}".format(mean_squared_error(y_test, y_pred)),html.Br(),html.Br(),
                          html.B("Erreur quadratique moyenne (RMSE) "),": {:.2f}".format(sqrt(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),
+                         html.B("Erreur moyenne absolue (MAE) "),": {:.2f}".format(sqrt(mean_absolute_error(y_test, y_pred))),html.Br(),html.Br(),
                          html.B("Coéfficient de détermination (R2) "),": {:.2f}".format(r2_score(y_test, y_pred)),html.Br(),html.Br(),
                          "temps : {:.2f} sec".format(diff),html.Br(),html.Br(),
                          dcc.Graph(id='res_KNeighborsRegressor_FitPredict_knngraph', figure=fig),html.Br(),html.Br(),
@@ -615,7 +633,10 @@ def CV_score(n_clicks,file,target,features,num_variables,n_neighbors,weights,alg
         res = cross_validation(clf=clf,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
         t2 = time.time()
         diff = t2 - t1
-        return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{:.2f}".format(mean(res))],style={'color': 'green'}),html.Br(),html.Br(),"time : {:.2f} sec".format(diff)]),""
+        if cv_scoring == "RMSE":
+            return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{:.2f}".format(sqrt(abs(np.mean(res))))],style={'color': 'green'}),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff)]),""
+        else:
+            return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{:.2f}".format(abs(np.mean(res)))],style={'color': 'green'}),html.Br(),html.Br(),"temps : {:.2f} sec".format(diff)]),""
 
 
 

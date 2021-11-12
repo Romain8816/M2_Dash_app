@@ -358,7 +358,8 @@ regression_KNeighborsRegressor = dbc.Card(
                     id='KNeighborsRegressor_GridSearchCV_scoring',
                     options=[
                         {'label': "MSE", 'value': "MSE"},
-                        {'label': "R2", 'value': "r2"},
+                        {'label': "RMSE", 'value': "RMSE"},
+                        {'label': "MAE", 'value': "MAE"},
                     ],
                     value = 'MSE'
                 ),html.Br(),html.Br(),
@@ -443,7 +444,8 @@ regression_KNeighborsRegressor = dbc.Card(
                     id='KNeighborsRegressor_cv_scoring',
                     options=[
                         {'label': "MSE", 'value': "MSE"},
-                        {'label': "R2", 'value': "r2"},
+                        {'label': "RMSE", 'value': "RMSE"},
+                        {'label': "MAE", 'value': "MAE"},
                     ],
                     value = 'MSE'
                 ),html.Br(),html.Br(),

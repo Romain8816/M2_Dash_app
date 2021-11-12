@@ -66,14 +66,13 @@ def get_best_params(X,Y,clf,params,cv,scoring,njobs):
                 grid_search = GridSearchCV(KNeighborsClassifier(), params, scoring=make_scorer(precision_score,average="macro"), cv=cv, n_jobs=njobs)
             if scoring == "precision_weighted":
                 grid_search = GridSearchCV(KNeighborsClassifier(), params, scoring=make_scorer(precision_score,average="weighted"), cv=cv, n_jobs=njobs)
-
         grid_search = grid_search.fit(X.values,Y.values)
         return grid_search
 
     if clf == "KNeighborsRegressor":
-        if scoring == "r2":
-            grid_search = GridSearchCV(KNeighborsRegressor(), params, scoring=make_scorer(r2_score,greater_is_better=True), cv=cv, n_jobs=njobs)
-        if scoring == "MSE":
+        if scoring == "MAE":
+            grid_search = GridSearchCV(KNeighborsRegressor(), params, scoring="neg_mean_absolute_error", cv=cv, n_jobs=njobs)
+        else:
             grid_search = GridSearchCV(KNeighborsRegressor(), params, scoring="neg_mean_squared_error", cv=cv, n_jobs=njobs)
         grid_search = grid_search.fit(X.values,Y.values)
         return grid_search
@@ -140,8 +139,9 @@ def cross_validation(clf,X,Y,cv,scoring):
         return cross_val
 
     if str(clf).startswith("KNeighborsRegressor"):
-        if scoring == "r2":
-            cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(r2_score,greater_is_better=True))
-        if scoring == "MSE":
+        if scoring == "MAE":
+            cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring="neg_mean_absolute_error")
+        else:
             cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring="neg_mean_squared_error")
+
         return cross_val
