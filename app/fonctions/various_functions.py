@@ -20,7 +20,7 @@ from sklearn.cluster import KMeans
 import dash_daq as daq
 from sklearn.preprocessing import StandardScaler
 
-# Fonction qui permet de filtrer les fichiers qui peuvent être sélectionné suivant une liste d'extensions prédéfinie. 
+# Fonction qui permet de filtrer les fichiers qui peuvent être sélectionné suivant une liste d'extensions prédéfinie.
 def allowed_files(path,extensions):
     allowed_files=[]
     for file in os.listdir(path):
@@ -30,14 +30,12 @@ def allowed_files(path,extensions):
             continue
     return allowed_files
 
-
 def number_of_observations(file_path):
     with open(file_path) as fp:
-        count = 0        
+        count = 0
         for _ in fp:
             count += 1
     return count
-
 
 # Fonction qui permet de lire un fichier csv ou xls et qui retoune un pandas dataframe
 def get_pandas_dataframe(file_path):
