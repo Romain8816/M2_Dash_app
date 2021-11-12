@@ -3,6 +3,7 @@ from dash import dcc
 from dash import html
 import dash_bootstrap_components as dbc
 from dash_bootstrap_components._components.Row import Row
+from numpy.core.fromnumeric import size
 import plotly.express as px
 import pandas as pd
 from dash.dependencies import Input,Output,State
@@ -21,6 +22,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn import svm
 from sklearn.model_selection import cross_val_score, train_test_split
 
+
+from layout.svr_layout import regression_svm
+from layout.log_layout import classification_log
+
+
+
+
 # --- /!\ data_path = os.getcwd() +'\data\\' # WINDOWS
 data_path = os.getcwd() +'/data/' # LINUX - MAC-OS
 files = [f for f in os.listdir(r'%s' %data_path)]
@@ -31,12 +39,12 @@ location_folder = dbc.Row(
     [
         dbc.Col(
             dbc.Input(
-                    type="text", id="location_folder", placeholder="Chemin absolu du répertoire du répertoire de travail : C:\.."
+                    type="text", id="location_folder", placeholder="Chemin absolu du répertoire du répertoire de travail : C:\..",persistence=True
                 ),className="mb-3"
         ),
         dbc.Col(
             dbc.Button(
-                "Valider", id="validation_folder", className="me-2", n_clicks=0
+                "Valider", id="validation_folder", className="me-2", n_clicks=1
             ),className="mb-3"
         )
     ]
@@ -55,7 +63,7 @@ dataset_selection = dbc.Row(
                 placeholder="Choisir un jeu de données",
                 clearable=False,
                 style={'width':'50%'},
-                persistence =False
+                persistence = True
             ),
             width=10,
         ),
@@ -74,8 +82,8 @@ target_selection = dbc.Row(
                 placeholder="Sélectionner la variable cible",
                 searchable=False,clearable=False,
                 style={'width':'50%'},
-                persistence=False,
-                persistence_type='memory'
+                persistence=True,
+                #persistence_type='memory'
             ),
             width=10,
         ),
@@ -96,8 +104,8 @@ features_selection = dbc.Row(
                     clearable=False,
                     multi=True,
                     style={'width':'50%'},
-                    persistence=False,
-                    persistence_type='memory'
+                    persistence=True,
+                    #persistence_type='memory'
             ),
             width=10,
         ),
@@ -108,7 +116,9 @@ features_selection = dbc.Row(
 ########################################################################################################
 # (Classification) Onglets
 
-# arbre de décision
+# Arbre, KNN, régression logistique
+
+# Arbre de décision
 classification_decision_tree = dbc.Card(
     children=[
 
@@ -289,51 +299,6 @@ classification_decision_tree = dbc.Card(
         ],body=True
 )
 
-# Arbre de décision
-
-
-# SVM
-classification_SVM = dbc.Card(
-    children=[
-        html.P("Support Vector Machine", className="card-text"),
-        dbc.Label("Taille de l'échantillion de test (compris entre 0.0 et 1.0)", html_for="test_size", width=4,style={'font-weight': 'bold'}),
-        dcc.Slider(
-            id='test_size',
-            min=0.0,
-            max=1.0,
-            step=0.1,
-            value=0.3,
-            tooltip={"placement": "bottom", "always_visible": True},
-        ),
-        dbc.Label("Random seed", html_for="random_state", width=4,style={'font-weight': 'bold'}),
-        dbc.Input(id='random_state',type='number'),
-        dbc.Label("Nombre de fold pour la validation croisée", html_for="k_fold", width=4,style={'font-weight': 'bold'}),
-        dbc.Input(id='k_fold',value=5,type='number'),
-        dbc.Label("Type de noyau (kernel)", html_for="kernel_selection", width=4,style={'font-weight': 'bold'}),
-        dcc.Dropdown(
-            id='kernel_selection',
-            options=[
-                {'label': 'linéaire', 'value': 'linear'},
-                {'label': 'polynomial', 'value': 'poly'},
-                {'label': 'RBF', 'value': 'rbf'},
-                {'label': 'Sigmoïde', 'value': 'sigmoid'},
-            ],
-            value = 'rbf'
-        ),
-        dbc.Label("Paramètre de régularisation (C)", html_for="regularisation_selection", width=4,style={'font-weight': 'bold'}),
-        dcc.Slider(
-            id='regularisation_selection',
-            min=0.1,
-            max=100,
-            step=0.5,
-            value=0.1,
-            tooltip={"placement": "bottom", "always_visible": True},
-        ),
-         dbc.Button("Valider", color="danger",id='smv_button',n_clicks=0),
-         html.Div(id='res_svm')
-    ],
-    body=True
-)
 
 # KNeighborsClassifier
 classification_KNeighborsClassifier = dbc.Card(
@@ -349,8 +314,10 @@ classification_KNeighborsClassifier = dbc.Card(
 
                     html.H3(html.B("Settings")),html.Br(),html.Hr(),html.Br(),
                     html.H4(html.B("Optimisation des hyperparamètres :")),html.Br(),html.Br(),
+
                     html.B("GridSearchCV_number_of_folds "),html.I("par défaut=10"),html.Br(),html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée pour l'optimisation des hyperparamètres.", className="card-text"),
                     dcc.Input(id="KNeighborsClassifier_GridSearchCV_number_of_folds", type="number", placeholder="input with range",min=1,max=100, step=1,value=10),html.Br(),html.Br(),
+                    
                     html.B("GridSearchCV_scoring "),html.I("par défaut = 'f1_macro'"),html.Br(),html.P("Selectionnez la méthode de scoring pour l'optimisation des hyperparamètres."),
                     dcc.Dropdown(
                         id='KNeighborsClassifier_GridSearchCV_scoring',
@@ -392,7 +359,7 @@ classification_KNeighborsClassifier = dbc.Card(
                         ],
                         value = -1
                     ),html.Br(),html.Br(),
-                    dbc.Button("valider GridSearchCV", color="info",id='KNeighborsClassifier_button_GridSearchCV',n_clicks=0),
+                    dbc.Button("valider GridSearchCV",color ="info",id='KNeighborsClassifier_button_GridSearchCV',n_clicks=0),
                     dcc.Loading(id="KNeighborsClassifier-ls-loading-1", children=[html.Div(id="KNeighborsClassifier-ls-loading-output-1")], type="default"),html.Br(),html.Hr(),html.Br(),
                     html.H4(html.B("Paramètrage du modèle et Fit & Predict :")),html.Br(),html.Br(),
                     html.B("n_neighbors "),html.I("par défaut=5"),html.Br(),html.P("Nombre de voisins à utiliser par défaut pour les requêtes de voisins.", className="card-text"),
@@ -510,6 +477,22 @@ classification_KNeighborsClassifier = dbc.Card(
         ],body=True
 )
 
+# Ensemble des onglets de classification
+classification_tabs = dbc.Tabs(
+    id="classification_tab",
+    children= [
+        dbc.Tab(classification_log,label="Régression logistique",tab_id ='log',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(classification_decision_tree,label="Arbre de décision",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(classification_KNeighborsClassifier,label="KNeighborsClassifier", tab_id='KNeighborsClassifier',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
+    ]
+)
+
+########################################################################################################
+# (Régression) Onglets
+
+# Régression linéaire
+
+
 # KNeighborsRegressor
 regression_KNeighborsRegressor = dbc.Card(
     children=[
@@ -524,8 +507,10 @@ regression_KNeighborsRegressor = dbc.Card(
 
                 html.H3(html.B("Settings")),html.Br(),html.Hr(),html.Br(),
                 html.H4(html.B("Optimisation des hyperparamètres :")),html.Br(),html.Br(),
+
                 html.B("GridSearchCV_number_of_folds "),html.I("par défaut=10"),html.Br(),html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée pour l'optimisation des hyperparamètres.", className="card-text"),
                 dcc.Input(id="KNeighborsRegressor_GridSearchCV_number_of_folds", type="number", placeholder="input with range",min=1,max=100, step=1,value=10),html.Br(),html.Br(),
+               
                 html.B("GridSearchCV_scoring "),html.I("par défaut = 'MSE'"),html.Br(),html.P("Selectionnez la méthode de scoring pour l'optimisation des hyperparamètres."),
                 dcc.Dropdown(
                     id='KNeighborsRegressor_GridSearchCV_scoring',
@@ -536,6 +521,7 @@ regression_KNeighborsRegressor = dbc.Card(
                     ],
                     value = 'MSE'
                 ),html.Br(),html.Br(),
+                
                 html.B("GridSearchCV_njobs "),html.I("par défaut=-1"),html.Br(),html.P("Selectionner le nombre de coeurs (-1 = tous les coeurs)", className="card-text"),
                 dcc.Dropdown(
                     id="KNeighborsRegressor_GridSearchCV_njobs",
@@ -550,10 +536,16 @@ regression_KNeighborsRegressor = dbc.Card(
                     ],
                     value = -1
                 ),html.Br(),html.Br(),
+
                 dbc.Button("valider GridSearchCV", color="info",id='KNeighborsRegressor_button_GridSearchCV',n_clicks=0),
-                dcc.Loading(id="KNeighborsRegressor-ls-loading-1", children=[html.Div(id="KNeighborsRegressor-ls-loading-output-1")], type="default"),html.Br(),html.Hr(),html.Br(),
+                dcc.Loading(
+                    id="KNeighborsRegressor-ls-loading-1", 
+                    children=[html.Div(id="KNeighborsRegressor-ls-loading-output-1")], type="default"
+                ),html.Br(),html.Hr(),html.Br(),
+                
                 html.H4(html.B("Paramètrage du modèle et Fit & Predict :")),html.Br(),html.Br(),
                 html.B("n_neighbors "),html.I("par défaut=5"),html.Br(),html.P("Nombre de voisins à utiliser par défaut pour les requêtes de voisins.", className="card-text"),
+                
                 dcc.Input(id="KNeighborsRegressor_n_neighbors", type="number", placeholder="input with range",min=1,max=100, step=1,value=5),html.Br(),html.Br(),
                 html.B("weights "),html.I("par défaut = 'uniform'"),html.Br(),html.P("Fonction de poids utilisée dans la prédiction."),
                 dcc.Dropdown(
@@ -564,6 +556,7 @@ regression_KNeighborsRegressor = dbc.Card(
                     ],
                     value = 'uniform'
                 ),html.Br(),html.Br(),
+
                 html.B("algorithm "),html.I("par défaut = 'auto'"),html.Br(),html.P("Algorithme utilisé pour calculer les voisins les plus proches."),
                 dcc.Dropdown(
                     id='KNeighborsRegressor_algorithm',
@@ -648,7 +641,7 @@ classification_tabs = dbc.Tabs(
     id="classification_tab",
     children= [
         dbc.Tab(classification_decision_tree,label="Arbre de décision",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-        dbc.Tab(classification_SVM,label="SVM",tab_id ='svm',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        #dbc.Tab(classification_SVM,label="SVM",tab_id ='svm',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
         dbc.Tab(classification_KNeighborsClassifier,label="KNeighborsClassifier", tab_id='KNeighborsClassifier',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
     ]
 )
@@ -785,7 +778,7 @@ regression_tabs = dbc.Tabs(
     id='regression_tabs',
     children = [
         dbc.Tab(Regession_regression_lineaire,label="Régression linéaire",tab_id='reg_lin'),
-        dbc.Tab(label="Régression polynomiale",tab_id ='reg_poly'),
+        dbc.Tab(regression_svm,label="SVR",tab_id ='svr'),
         dbc.Tab(regression_KNeighborsRegressor,label="KNeighborsRegressor", tab_id='KNeighborsRegressor',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
     ]
 )
