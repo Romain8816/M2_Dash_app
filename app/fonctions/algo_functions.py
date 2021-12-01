@@ -21,9 +21,8 @@ from detect_delimiter import detect
 from sklearn.cluster import KMeans
 import dash_daq as daq
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV
 from sklearn import svm
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.model_selection import cross_val_score, train_test_split, GridSearchCV
 from sklearn import metrics
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
@@ -33,20 +32,11 @@ from sklearn.svm import SVR
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.metrics import make_scorer, recall_score, precision_score, f1_score, mean_squared_error, r2_score
 import time
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV
 from sklearn import svm
 
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import cross_val_score, train_test_split,GridSearchCV
 
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.compose import make_column_transformer, make_column_selector
-from sklearn.pipeline import make_pipeline
 
-import time 
 
 
 def get_best_params(X,Y,clf,params,cv,scoring,njobs):
