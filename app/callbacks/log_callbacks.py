@@ -43,7 +43,7 @@ from sklearn.linear_model import LogisticRegression
 def Gridsearch(app):
     @app.callback(
         #Output(component_id='svr-ls-loading-output-1',component_property='children'),
-        Output(component_id='res_log_GridSearchCV',component_property='children'),   # Affichage des meilleurs paramètres 
+        Output(component_id='res_log_GridSearchCV',component_property='children'),   # Affichage des meilleurs paramètres
         Input(component_id='svr_button_GridSearchCV',component_property='n_clicks'), # Validation du Gridsearch
         State(component_id='file_selection',component_property='value'),
         State(component_id='target_selection',component_property='value'),
@@ -54,7 +54,7 @@ def Gridsearch(app):
         State(component_id='svr_gridCV_scoring',component_property='value'))
 
     def GridsearchLog (n_clicks,file,target,features,train_size,k_fold,n_jobs,metric):
-        
+
         if (n_clicks==0):
             PreventUpdate
         else:
@@ -62,7 +62,7 @@ def Gridsearch(app):
             df = get_pandas_dataframe(file)
             X= df[features]
             y= df[target]
-            
+
             X_train,X_test,y_train,y_test = train_test_split(X,y,train_size=train_size)
 
             numerical_features = make_column_selector(dtype_include=np.number)
@@ -103,7 +103,7 @@ def Gridsearch(app):
             )
 
 def fit_predicit(app):
-    # Fit et predict 
+    # Fit et predict
     @app.callback(
         Output('res_log','children'),
         Input('smv_button','n_clicks'),
@@ -140,18 +140,18 @@ def fit_predicit(app):
             y_pred = model.predict(X_test)
 
             fig = px.imshow(df.corr())
-            
+
             #fig = px.scatter_matrix(df,dimensions=features)
 
             # train_score, val_score = validation_curve(model,X_train,y_train,param_name='svr__C',param_range=np.arange(0,100),cv=k_fold)
-            
+
             # fig = go.Figure()
 
             # fig.add_trace(go.Scatter(x=np.arange(0,100), y=val_score.mean(axis=1),mode='lines',name='validation score'))
             # fig.add_trace(go.Scatter(x=np.arange(0,100), y=train_score.mean(axis=1),mode='lines',name='training score'))
             # fig.update_layout(title="Score en fonction de C")
 
-            return [    
+            return [
                         html.Div(
                             [
                                 dbc.Label("Validation score"),
@@ -161,4 +161,3 @@ def fit_predicit(app):
                         ),
                         dcc.Graph(figure=fig)
                     ]
-
