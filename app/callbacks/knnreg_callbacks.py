@@ -57,7 +57,16 @@ def Gridsearch(app):
             diff = t2 - t1 # calcul du temps écoulé pour la section 'optimisation des hyperparamètres'
             if GridSearchCV_scoring == "RMSE":
                 grid_search.best_score_ = math.sqrt(abs(grid_search.best_score_))
-            return html.Div(["GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),dash_table.DataTable(id='KNeighborsRegressor_params_opti',columns=[{"name": i, "id": i} for i in best_params.columns],data=best_params.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in best_params.columns]),html.Br(),html.Br(),"GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.4f}".format(abs(grid_search.best_score_))],style={'color': 'blue'}),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff)]),""
+            return html.Div(
+                    ["GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),
+                    dash_table.DataTable(
+                        id='KNeighborsRegressor_params_opti',
+                        columns=[{"name": i, "id": i} for i in best_params.columns],
+                        data=best_params.to_dict('records'),
+                        style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in best_params.columns]),
+                        html.Br(),html.Br(),
+                        "GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.4f}".format(abs(grid_search.best_score_))],style={'color': 'blue'}),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff)]
+            ),""
 
 ######################################
 # Callback en charge d'apprendre le modèle de regression KNN sur

@@ -84,11 +84,11 @@ def Gridsearch(app):
             model = Pipeline([('preprocessor',preprocessor),('clf',clf)])
             params = {
                 'clf__kernel':['linear','poly','rbf','sigmoid'],
-                'clf__degree': [i for i in range(1,6)],
+                'clf__degree': [i for i in range(1,5)],
                 'clf__gamma': ['scale','auto'],
-                'clf__coef0': [i for i in np.arange(0.1,1,0.2)],
-                'clf__C' : [i for i in np.arange(0.1,1,0.2)],
-                'clf__epsilon' : [i for i in np.arange(0.1,1,0.2)]
+                'clf__coef0': [i for i in np.arange(0.1,1,0.3)],
+                'clf__C' : [i for i in np.arange(0.1,1,0.3)],
+                'clf__epsilon' : [i for i in np.arange(0.1,1,0.3)]
             }
             
             if (metric=="RMSE"):
@@ -100,15 +100,24 @@ def Gridsearch(app):
                 grid.fit(X_train,y_train)
                 grid.best_score_ = abs(grid.best_score_)
 
+            best_params = pd.Series(grid.best_params_,index=grid.best_params_.keys())
+            best_params = pd.DataFrame(best_params)
+            best_params.reset_index(level=0, inplace=True)
+            best_params.columns = ["paramètres","valeur"]
+
             t2 = time.time()
             diff = t2 - t1
-
             y_pred = grid.predict(X_test)
 
             return (
                 [
-                    html.P("Paramètres optimaux : {}".format(grid.best_params_)),
-                    html.P("Meilleur score : {}".format(grid.best_score_))
+                    "GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),
+                    dash_table.DataTable(
+                        columns=[{"name": i, "id": i} for i in best_params.columns],
+                        data=best_params.to_dict('records'),
+                        style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in best_params.columns]),
+                        html.Br(),html.Br(),
+                        "GridSearchCV meilleur ",html.B(" {} ".format(metric)),": ",html.B(["{:.4f}".format(abs(grid.best_score_))],style={'color': 'blue'}),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff)
                 ]
             )
 
