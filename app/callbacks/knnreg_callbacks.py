@@ -71,7 +71,7 @@ def Gridsearch(app):
 ######################################
 # Callback en charge d'apprendre le modèle de regression KNN sur
 # le jeu de données d'entrainement et de calculer
-# ses performance sur le jeu de données test
+# ses performances sur le jeu de données test
 ######################################
 def FitPredict(app):
     @app.callback(
@@ -102,10 +102,13 @@ def FitPredict(app):
             X,Y = pre_process(df=df,num_variables=num_variables,features=features,centrer_reduire=centrer_reduire,target=target)
             # split train test
             stratify = "False"
+
             X_train,X_test,y_train,y_test = split_train_test(X=X,Y=Y,random_state=random_state,test_size=test_size,shuffle=shuffle,stratify=stratify)
+
             clf = build_KNeighborsRegressor(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric) # instanciation du modèle
             clf.fit(X_train.values,y_train.values) # apprentissage
             y_pred = clf.predict(X_test.values) # prédiction
+            
             k = 0
             more_uniq_col = ""
             for col in X_test: # récupérer la variable explicative avec le plus de valeurs uniques pour la représentation graphique

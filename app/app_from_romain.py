@@ -314,7 +314,7 @@ def stats_descrip(file,features,target,num_var):
 ########################################################################################################
 # (Régression) SVM
 svr_callbacks.Gridsearch(app)
-svr_callbacks.fit_predict(app)
+svr_callbacks.FitPredict(app)
 
 ########################################################################################################
 # (Classification) Régression logistique

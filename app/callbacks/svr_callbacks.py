@@ -27,9 +27,6 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.model_selection import validation_curve, GridSearchCV
-
-from fonctions.various_functions import get_pandas_dataframe
-from fonctions.algo_functions import build_smv
 from sklearn.svm import SVR
 
 from layout.layout import location_folder, dataset_selection, target_selection,features_selection
@@ -39,6 +36,9 @@ from sklearn import metrics
 from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score
 from math import sqrt
 from matplotlib import pyplot
+
+from fonctions.various_functions import get_pandas_dataframe, binariser, centrer_reduire_norm, split_train_test, pre_process
+from fonctions.algo_functions import build_smv, build_KNeighborsRegressor, cross_validation, get_best_params
 
 # (Régression) SVM
 
@@ -55,8 +55,7 @@ def Gridsearch(app):
         State(component_id='svr_GridSearchCV_njobs',component_property='value'),
         State(component_id='svr_gridCV_scoring',component_property='value'))
 
-    def GridsearchSVM (n_clicks,file,target,features,train_size,k_fold,njobs,metric):
-        
+    def GridSearchCV_score (n_clicks,file,target,features,train_size,k_fold,njobs,metric):
         if (n_clicks==0):
             PreventUpdate
         else:
@@ -121,7 +120,7 @@ def Gridsearch(app):
                 ]
             )
 
-def fit_predict(app):
+def FitPredict(app):
     # Fit et predict 
     @app.callback(
         Output('res_svm','children'),
@@ -137,26 +136,30 @@ def fit_predict(app):
         State(component_id='svm_epsilon',component_property='value'),
         State('svm_degre','value'))
 
-    def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon,degre):
-
+    def CV_score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon,degre):
         if (n_clicks == 0):
             PreventUpdate
         else:
-            df = get_pandas_dataframe(file)
+            t1 = time.time() # start
+            df = get_pandas_dataframe(file) # récupération du jeu de données
 
             X= df[features]
             y= df[target]
 
-            X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state)
+            #X,Y = pre_process(df=df,num_variables=num_variables,features=features,centrer_reduire=centrer_reduire,target=target)
+            stratify = "False"
+            X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state,stratify=stratify)
 
-            model = build_smv(kernel,regularisation,epsilon)
+            model = build_smv(kernel,regularisation,epsilon) # instanciation du modèle
+            model.fit(X_train,y_train) # apprentissage
+            y_pred = model.predict(X_test) # prédiction
+
+
             score = cross_validate(model,X_train,y_train,cv=k_fold,scoring=('r2','neg_mean_squared_error'),return_train_score=True)
 
             rsquared = score['test_r2'].mean()
             mse = score['test_neg_mean_squared_error'].mean()
 
-            model.fit(X_train,y_train)
-            y_pred = model.predict(X_test)
 
             fig = px.imshow(df.corr())
             

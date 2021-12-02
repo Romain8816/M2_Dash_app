@@ -29,10 +29,48 @@ regression_svm = dbc.Card(
 
         html.Div(
             [
+                 html.H4(html.B("Paramètres généraux")),html.Br(),html.Br(),
+                        html.B("centrer_reduire "),html.I("par défaut=non"),html.Br(),html.P("Si coché, on retranche à chaque donnée la moyenne de sa colonne d'appartenance et on la divise ensuite par l'écart-type de sa colonne d'appartenance."),
+                        dbc.Checklist(id="KNeighborsRegressor_centrer_reduire",options=[{"label":"centrer réduire","value":"yes"}]),html.Br(),html.Br(),
+                        html.B("test_size "),html.I("par défaut=0.3"),html.Br(),html.P("Taille du jeu de données test.", className="card-text"),
+                        dcc.Input(id="KNeighborsRegressor_test_size", type="number", placeholder="input with range",min=0.1,max=0.5, step=0.1,value=0.3),html.Br(),html.Br(),
+                        html.B("random_state "),html.I("par défaut=42"),html.Br(),html.P("Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
+                        dcc.Input(id="KNeighborsRegressor_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),
+                        html.B("shuffle "),html.I("par défaut shuffle=True"),html.Br(),html.P("s'il faut ou non mélanger les données avant de les diviser.", className="card-text"),
+                        dcc.Dropdown(
+                            id='KNeighborsRegressor_shuffle',
+                            options=[
+                                {'label': 'True', 'value': 'True'},
+                                {'label': 'False', 'value': 'False'},
+                            ],
+                            value = 'True'
+                            ),html.Br(),html.Hr(),html.Br(),
+            ]
+        ),
+
+        html.Div(
+            [
                 html.Div(
                     children = 
                     [
-                        html.H3(html.B("Settings")),html.Hr(),
+                        # html.H4(html.B("Paramètres généraux")),html.Br(),html.Br(),
+                        # html.B("centrer_reduire "),html.I("par défaut=non"),html.Br(),html.P("Si coché, on retranche à chaque donnée la moyenne de sa colonne d'appartenance et on la divise ensuite par l'écart-type de sa colonne d'appartenance."),
+                        # dbc.Checklist(id="KNeighborsRegressor_centrer_reduire",options=[{"label":"centrer réduire","value":"yes"}]),html.Br(),html.Br(),
+                        # html.B("test_size "),html.I("par défaut=0.3"),html.Br(),html.P("Taille du jeu de données test.", className="card-text"),
+                        # dcc.Input(id="KNeighborsRegressor_test_size", type="number", placeholder="input with range",min=0.1,max=0.5, step=0.1,value=0.3),html.Br(),html.Br(),
+                        # html.B("random_state "),html.I("par défaut=42"),html.Br(),html.P("Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
+                        # dcc.Input(id="KNeighborsRegressor_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),
+                        # html.B("shuffle "),html.I("par défaut shuffle=True"),html.Br(),html.P("s'il faut ou non mélanger les données avant de les diviser.", className="card-text"),
+                        # dcc.Dropdown(
+                        #     id='KNeighborsRegressor_shuffle',
+                        #     options=[
+                        #         {'label': 'True', 'value': 'True'},
+                        #         {'label': 'False', 'value': 'False'},
+                        #     ],
+                        #     value = 'True'
+                        #     ),html.Br(),html.Hr(),html.Br(),
+
+
                         html.H4(html.B("Optimisation des hyperparamètres :")),html.Br(),
                         dbc.Row(
                             [
@@ -76,7 +114,7 @@ regression_svm = dbc.Card(
                         
                         html.Br(),html.Hr(),
                         
-                        html.H4(html.B("Paramètrage du modèle et Fit & Predict :")),html.Br(),
+                        html.H4(html.B("Performance du modèle sur le jeu de test :")),html.Br(),
 
                 
                         dbc.Row(
