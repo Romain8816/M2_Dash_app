@@ -68,7 +68,7 @@ regression_svm = dbc.Card(
                         html.P("Selectionner le nombre de coeurs (-1 = tous les coeurs)", className="card-text"),
                         dcc.Dropdown(
                             id="svr_GridSearchCV_njobs",
-                            options= [{'label': 'None', 'value': 'None'}] + [{'label': -1, 'value': -1}] + [{'label':i, 'value':i} for i in range(1,33)],
+                            options= [{'label': 'None', 'value': None}] + [{'label': -1, 'value': -1}] + [{'label':i, 'value':i} for i in range(1,33)],
                             value = -1
                         ),html.Br(),html.Br(),
 

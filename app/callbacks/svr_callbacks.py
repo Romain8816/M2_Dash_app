@@ -87,8 +87,15 @@ def Gridsearch(app):
                 'clf__C' : [i for i in np.arange(0.1,1,0.2)],
                 'clf__epsilon' : [i for i in np.arange(0.1,1,0.2)]
             }
-            grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=n_jobs)
-            grid.fit(X_train,y_train)
+            
+            if (metric=="RMSE"):
+                grid = GridSearchCV(model,params,scoring="neg_mean_squared_error",cv=k_fold,n_jobs=n_jobs)
+                grid.fit(X_train,y_train)
+                grid.best_score_ = np.sqrt(abs(grid.best_score_))
+            else:
+                grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=n_jobs)
+                grid.fit(X_train,y_train)
+                grid.best_score_ = abs(grid.best_score_)
 
             t2 = time.time()
             diff = t2 - t1
