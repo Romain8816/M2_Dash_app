@@ -51,7 +51,7 @@ from sklearn.decomposition import PCA
 from statistics import *
 from layout.layout import location_folder, dataset_selection, target_selection,features_selection
 from layout.layout import regression_tabs, classification_tabs
-from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
+from fonctions.various_functions import *
 from fonctions.algo_functions import *
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn import svm

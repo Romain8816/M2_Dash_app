@@ -19,6 +19,92 @@ from detect_delimiter import detect
 from sklearn.cluster import KMeans
 import dash_daq as daq
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
+######################################
+# Fonction qui permet de lire un fichier
+# csv ou xls, retoune un dataframe pandas
+######################################
+def get_pandas_dataframe(file_path):
+    if file_path.endswith('.csv'):
+        with open(r'%s' %file_path, "rb") as f:
+            msg = f.read()
+            firstline = f.readline()
+            detection = chardet.detect(msg)
+            encoding= detection["encoding"]
+        f.close()
+        with open(r'%s' %file_path) as f:
+            delimiter = detect(f.readline())
+        f.close()
+        df = pd.read_csv(file_path,encoding=encoding,sep=delimiter)
+    elif file_path.endswith(('.xls','.xlsx')):
+        df = pd.read_excel(file_path)
+    return df
+
+######################################
+# Fonction qui permet de binariser les
+# explicatives qualitatives, retoune une liste
+# contenant le dataframe des explicatives binarisées
+# et les noms des nouvelles colonnes
+######################################
+def binariser(df,features,target):
+    df_ = pd.get_dummies(df[features])
+    f = df_.columns
+    df = pd.concat([df_,df[target]], axis=1)
+    return [df,f]
+
+######################################
+# Fonction qui permet de centrer réduire
+# les explicatives, retourne un dataframe
+# des explicatives normalisées
+######################################
+def centrer_reduire_norm(df,features):
+    scaler = StandardScaler()
+    X = scaler.fit_transform(df[features])
+    X = pd.DataFrame(X,columns=features)
+    return X
+
+######################################
+# Fonction qui permet découper le jeux
+# de données initial, retourne un jeu
+# d'apprentissage et un jeu de test
+######################################
+def split_train_test(X,Y,random_state,test_size,shuffle,stratify):
+    if shuffle == "True":
+        shuffle = True
+        if stratify == "False":
+            stratify = None
+        if stratify == "True":
+            stratify = Y
+    if shuffle == "False":
+        shuffle = False
+        stratify = None
+    X_train,X_test,y_train,y_test = train_test_split(X, Y, random_state=random_state, test_size=float(test_size), shuffle=shuffle, stratify=stratify)
+    return [X_train,X_test,y_train,y_test]
+
+######################################
+# Fonction qui permet de binariser
+# et centrer réduire les données
+######################################
+def pre_process(df,num_variables,features,centrer_reduire,target):
+    # remplace les valeurs manquantes soit par la moyenne soit par le mode
+    for column in df.columns:
+        if np.issubdtype(df[column].dtype, np.number) == False:
+            df[column].fillna(df[column].mode()[0], inplace=True)
+        else:
+            df[column].fillna(df[column].mean(), inplace=True)
+    check_types = all(element in num_variables for element in features) # détermine si certaines explicatives sont qualitatives
+    if check_types == False:
+        bin = binariser(df=df,features=features,target=target) # binarisation des explicatives qualitatives
+        df = bin[0]
+        features = bin[1]
+    if centrer_reduire == ['yes']:
+        X = centrer_reduire_norm(df=df,features=features) # centrage et réduction des explicatives
+    else:
+        X = df[features]
+    Y= df[target]
+    return [X,Y]
+
 
 # Fonction qui permet de filtrer les fichiers qui peuvent être sélectionné suivant une liste d'extensions prédéfinie.
 def allowed_files(path,extensions):
@@ -36,27 +122,6 @@ def number_of_observations(file_path):
         for _ in fp:
             count += 1
     return count
-
-# Fonction qui permet de lire un fichier csv ou xls et qui retoune un pandas dataframe
-def get_pandas_dataframe(file_path):
-    if file_path.endswith('.csv'):
-        with open(r'%s' %file_path, "rb") as f:
-            msg = f.read()
-            firstline = f.readline()
-            detection = chardet.detect(msg)
-            encoding= detection["encoding"]
-        f.close()
-
-        with open(r'%s' %file_path) as f:
-            delimiter = detect(f.readline())
-        f.close()
-
-        df = pd.read_csv(file_path,encoding=encoding,sep=delimiter)
-
-    elif file_path.endswith(('.xls','.xlsx')):
-        df = pd.read_excel(file_path)
-
-    return df
 
 # (à supprimer ??) Fonction qui permet de lire un fichier csv ou xls et qui retoune un datatable
 def parse_contents(contents, filename):

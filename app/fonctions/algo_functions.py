@@ -46,9 +46,18 @@ from sklearn.impute import SimpleImputer
 from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.pipeline import make_pipeline
 
-import time 
+import time
 
-
+######################################
+# Fonction permet qui permet d'appliquer
+# la méthode GridSearchCV de sklearn.
+# Les multiples conditions servent
+# à gérer les paramètres saisis par
+# l'utilisateur et en particulier
+# le cas où la métrique de score ne
+# peut pas s'appliquer au nombre de
+# classes de la variable à prédire
+######################################
 def get_best_params(X,Y,clf,params,cv,scoring,njobs):
     if clf == "KNeighborsClassifier":
         if scoring not in ["f1_binary","recall_binary","precision_binary","recall_micro","recall_macro","recall_weighted","precision_micro","precision_macro","precision_weighted"]:
@@ -56,13 +65,13 @@ def get_best_params(X,Y,clf,params,cv,scoring,njobs):
         else:
             if scoring == "f1_binary":
                 if len(set(list(Y))) > 2:
-                    grid_search = "le nombre de classe n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
+                    grid_search = "le nombre de classes n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
                     return grid_search
                 else:
                     grid_search = GridSearchCV(KNeighborsClassifier(), params, scoring=make_scorer(f1_score,average="binary", pos_label = sorted(list(set(list(Y))))[0]))
             if scoring == "recall_binary":
                 if len(set(list(Y))) > 2:
-                    grid_search = "le nombre de classe n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
+                    grid_search = "le nombre de classes n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
                     return grid_search
                 else:
                     grid_search = GridSearchCV(KNeighborsClassifier(), params, scoring=make_scorer(recall_score,average="binary", pos_label = sorted(list(set(list(Y))))[0]))
@@ -74,7 +83,7 @@ def get_best_params(X,Y,clf,params,cv,scoring,njobs):
                 grid_search = GridSearchCV(KNeighborsClassifier(), params, scoring=make_scorer(recall_score,average="weighted"), cv=cv, n_jobs=njobs)
             if scoring == "precision_binary":
                 if len(set(list(Y))) > 2:
-                    grid_search = "le nombre de classe n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
+                    grid_search = "le nombre de classes n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
                     return grid_search
                 else:
                     grid_search = GridSearchCV(KNeighborsClassifier(), params, scoring=make_scorer(precision_score,average="binary", pos_label = sorted(list(set(list(Y))))[0]))
@@ -94,14 +103,14 @@ def get_best_params(X,Y,clf,params,cv,scoring,njobs):
             grid_search = GridSearchCV(KNeighborsRegressor(), params, scoring="neg_mean_squared_error", cv=cv, n_jobs=njobs)
         grid_search = grid_search.fit(X.values,Y.values)
         return grid_search
-    if clf == "Arbre de decision" : 
+    if clf == "Arbre de decision" :
         t1 = time.time()
         grid_search = GridSearchCV(DecisionTreeClassifier(), params, scoring=scoring, cv=cv, n_jobs=njobs)
         grid_search = grid_search.fit(X,Y)
         t2 = time.time()
         diff = t2 - t1
         return [grid_search,diff]
-    if clf == "Regression lineaire" : 
+    if clf == "Regression lineaire" :
         t1 = time.time()
         grid_search = GridSearchCV(LinearRegression(), params, scoring=scoring, cv=cv, n_jobs=njobs)
         grid_search = grid_search.fit(X,Y)
@@ -109,20 +118,8 @@ def get_best_params(X,Y,clf,params,cv,scoring,njobs):
         diff = t2 - t1
         return [grid_search,diff]
 
-def binariser(df,features,target):
-    df_ = pd.get_dummies(df[features])
-    f = df_.columns
-    df = pd.concat([df_,df[target]], axis=1)
-    return [df,f]
-
-def centrer_reduire_norm(df,features):
-    scaler = StandardScaler()
-    X = scaler.fit_transform(df[features])
-    X = pd.DataFrame(X,columns=features)
-    return X
-
 def build_smv(kernel,regularisation,epsilon):
-    
+
     numerical_features = make_column_selector(dtype_include=np.number)
     categorical_features = make_column_selector(dtype_exclude=np.number)
 
@@ -137,7 +134,11 @@ def build_smv(kernel,regularisation,epsilon):
     #print(sorted(model.get_params().keys()))
     #print(sorted(model.metrics.SCORERS.keys()))
     return model
-    
+
+######################################
+# Cette fonction est en charge d'instancier
+# le classifier KNN, retourne le modèle
+######################################
 def build_KNeighborsClassifier(n_neighbors,weights,algorithm,leaf_size,p,metric):
     clf = KNeighborsClassifier(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric)
     return clf
@@ -180,6 +181,17 @@ def cross_val(clf,X,Y,cv,scoring):
     diff = t2 - t1
     return [cross_val,diff]
 
+
+######################################
+# Fonction permet qui permet d'appliquer
+# la cross validation de sklearn.
+# Les multiples conditions servent
+# à gérer les paramètres saisis par
+# l'utilisateur et en particulier
+# le cas où la métrique de score ne
+# peut pas s'appliquer au nombre de
+# classes de la variable à prédire
+######################################
 def cross_validation(clf,X,Y,cv,scoring):
     if str(clf).startswith("DecisionTreeClassifier"):
         if scoring not in ["f1_binary","recall_binary","precision_binary","recall_micro","recall_macro","recall_weighted","precision_micro","precision_macro","precision_weighted"]:
@@ -222,13 +234,13 @@ def cross_validation(clf,X,Y,cv,scoring):
         else:
             if scoring == "f1_binary":
                 if len(set(list(Y))) > 2:
-                    cross_val = "le nombre de classe n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
+                    cross_val = "le nombre de classes n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
                     return cross_val
                 else:
                     cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(f1_score,average="binary", pos_label = sorted(list(set(list(Y))))[0]))
             if scoring == "recall_binary":
                 if len(set(list(Y))) > 2:
-                    cross_val = "le nombre de classe n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
+                    cross_val = "le nombre de classes n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
                     return cross_val
                 else:
                     cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(recall_score,average="binary", pos_label = sorted(list(set(list(Y))))[0]))
@@ -240,7 +252,7 @@ def cross_validation(clf,X,Y,cv,scoring):
                 cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(recall_score,average="weighted"))
             if scoring == "precision_binary":
                 if len(set(list(Y))) > 2:
-                    cross_val = "le nombre de classe n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
+                    cross_val = "le nombre de classes n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
                     return cross_val
                 else:
                     cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(precision_score,average="binary", pos_label = sorted(list(set(list(Y))))[0]))
@@ -251,14 +263,12 @@ def cross_validation(clf,X,Y,cv,scoring):
             if scoring == "precision_weighted":
                 cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(precision_score,average="weighted"))
         return cross_val
-
     if str(clf).startswith("KNeighborsRegressor"):
         if scoring == "MAE":
             cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring="neg_mean_absolute_error")
         else:
             cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring="neg_mean_squared_error")
-
         return cross_val
     if str(clf).startswith("LinearRegression"):
-        cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=scoring) 
+        cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=scoring)
         return cross_val
