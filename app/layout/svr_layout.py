@@ -31,40 +31,37 @@ regression_svm = dbc.Card(
         html.Div(
             [
                  html.H4(html.B("Paramètres généraux")),html.Br(),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    dbc.Label("Taille de l'échantillon d'entrainement", html_for="train_size",style={'font-weight': 'bold'}),
-                                    width=2
-                                ),
-                                dbc.Col(
-                                    dcc.Slider(
-                                        id='train_size',min=0.0,max=1.0,step=0.1,value=0.7,tooltip={"placement": "bottom", "always_visible": True}
-                                        #className="col-sm-6 col-md-5 col-lg-4",# Taille de la slider sur 3 colonnes 
-                                    ),width=2
-                                )
-                            ]
+                 dbc.Row(
+                     [
+                         dbc.Col(
+                            dbc.Label("Taille de l'échantillon d'entrainement", html_for="svr_train_size",style={'font-weight': 'bold'}),
+                            width=2
                         ),
+                        dbc.Col(
+                            dcc.Slider(id='svr_train_size',min=0.0,max=1.0,step=0.1,value=0.7,tooltip={"placement": "bottom", "always_visible": True}),
+                            width=2
+                        )
+                    ]
+                ),
 
-                        html.B("Random state "),html.I("par défaut=42"),html.Br(),html.P("Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
-                        dcc.Input(id="KNeighborsRegressor_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),          
-
-                        dbc.Row(
+                html.B("Random state "),html.I("par défaut=42"),html.Br(),
+                html.P("Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
+                dcc.Input(id="KNeighborsRegressor_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),
+                dbc.Row(
+                    [
+                        dbc.Col(
                             [
-                                dbc.Col(
-                                    [
-                                        dbc.Label("Centrer réduire",  html_for="train_size",style={'font-weight': 'bold'}),
-                                    ], width=1
-                                ),
-                                dbc.Col(
-                                    dbc.Checklist(
-                                        id="KNeighborsRegressor_centrer_reduire",
-                                        options=[{"value":"yes"}]
-                                    )
-                                )
-                            ]
-                        ),                         
-                        
+                                dbc.Label("Centrer réduire",  html_for="svr_centrer_reduire",style={'font-weight': 'bold'}),
+                            ], width=1
+                        ),
+                        dbc.Col(
+                            dbc.Checklist(
+                                id="svr_centrer_reduire",
+                                options=[{"value":"yes"}]
+                            )
+                        )
+                    ]
+                ),                         
             ]
         ),
 
@@ -75,24 +72,6 @@ regression_svm = dbc.Card(
                 html.Div(
                     children = 
                     [
-                        # html.H4(html.B("Paramètres généraux")),html.Br(),html.Br(),
-                        # html.B("centrer_reduire "),html.I("par défaut=non"),html.Br(),html.P("Si coché, on retranche à chaque donnée la moyenne de sa colonne d'appartenance et on la divise ensuite par l'écart-type de sa colonne d'appartenance."),
-                        # dbc.Checklist(id="KNeighborsRegressor_centrer_reduire",options=[{"label":"centrer réduire","value":"yes"}]),html.Br(),html.Br(),
-                        # html.B("test_size "),html.I("par défaut=0.3"),html.Br(),html.P("Taille du jeu de données test.", className="card-text"),
-                        # dcc.Input(id="KNeighborsRegressor_test_size", type="number", placeholder="input with range",min=0.1,max=0.5, step=0.1,value=0.3),html.Br(),html.Br(),
-                        # html.B("random_state "),html.I("par défaut=42"),html.Br(),html.P("Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
-                        # dcc.Input(id="KNeighborsRegressor_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),
-                        # html.B("shuffle "),html.I("par défaut shuffle=True"),html.Br(),html.P("s'il faut ou non mélanger les données avant de les diviser.", className="card-text"),
-                        # dcc.Dropdown(
-                        #     id='KNeighborsRegressor_shuffle',
-                        #     options=[
-                        #         {'label': 'True', 'value': 'True'},
-                        #         {'label': 'False', 'value': 'False'},
-                        #     ],
-                        #     value = 'True'
-                        #     ),html.Br(),html.Hr(),html.Br(),
-
-
                         html.H4(html.B("Optimisation des hyperparamètres :")),html.Br(),
 
                         html.B("GridSearchCV_number_of_folds "),html.I("par défaut=10"),html.Br(),
@@ -135,7 +114,6 @@ regression_svm = dbc.Card(
                                 dbc.Col(
                                     dcc.Slider(
                                         id='test_size',min=0.0,max=1.0,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}
-                                        #className="col-sm-6 col-md-5 col-lg-4",# Taille de la slider sur 3 colonnes 
                                     ),width=5
                                 )
                             ]

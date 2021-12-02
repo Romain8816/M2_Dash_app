@@ -50,12 +50,13 @@ def Gridsearch(app):
         State(component_id='file_selection',component_property='value'),
         State(component_id='target_selection',component_property='value'),
         State(component_id='features_selection',component_property='value'),
-        State(component_id='train_size',component_property='value'),
+        State(component_id='svr_train_size',component_property='value'),
+        State(component_id='svr_centrer_reduire',component_property='value'),
         State(component_id='svr_gridCV_k_folds',component_property='value'),
         State(component_id='svr_GridSearchCV_njobs',component_property='value'),
         State(component_id='svr_gridCV_scoring',component_property='value'))
 
-    def GridSearchCV_score (n_clicks,file,target,features,train_size,k_fold,njobs,metric):
+    def GridSearchCV_score (n_clicks, file, target, features, train_size, centrer_reduire, k_fold, njobs, metric):
         if (n_clicks==0):
             PreventUpdate
         else:
