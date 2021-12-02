@@ -55,12 +55,15 @@ def Gridsearch(app):
         State(component_id='svr_GridSearchCV_njobs',component_property='value'),
         State(component_id='svr_gridCV_scoring',component_property='value'))
 
-    def GridsearchSVM (n_clicks,file,target,features,train_size,k_fold,n_jobs,metric):
+    def GridsearchSVM (n_clicks,file,target,features,train_size,k_fold,njobs,metric):
         
         if (n_clicks==0):
             PreventUpdate
         else:
             t1 = time.time()
+            if njobs == "None":
+                njobs = None
+
             df = get_pandas_dataframe(file)
             X= df[features]
             y= df[target]
@@ -89,11 +92,11 @@ def Gridsearch(app):
             }
             
             if (metric=="RMSE"):
-                grid = GridSearchCV(model,params,scoring="neg_mean_squared_error",cv=k_fold,n_jobs=n_jobs)
+                grid = GridSearchCV(model,params,scoring="neg_mean_squared_error",cv=k_fold,n_jobs=njobs)
                 grid.fit(X_train,y_train)
                 grid.best_score_ = np.sqrt(abs(grid.best_score_))
             else:
-                grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=n_jobs)
+                grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=njobs)
                 grid.fit(X_train,y_train)
                 grid.best_score_ = abs(grid.best_score_)
 
