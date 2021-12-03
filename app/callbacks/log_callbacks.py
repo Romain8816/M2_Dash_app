@@ -124,7 +124,7 @@ def Gridsearch(app):
 def FitPredict(app):
     # Fit et predict
     @app.callback(
-        Output('res_log_GridSearchCV','children'),
+        Output('res_log_FitPredict','children'),
         Input('log_button','n_clicks'),
         State(component_id='file_selection',component_property='value'),
         State(component_id='target_selection',component_property='value'),

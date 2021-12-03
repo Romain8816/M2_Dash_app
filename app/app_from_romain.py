@@ -319,6 +319,8 @@ svr_callbacks.FitPredict(app)
 ########################################################################################################
 # (Classification) Régression logistique
 log_callbacks.Gridsearch(app)
+log_callbacks.FitPredict(app)
+
 
 ########################################################################################################
 # (CRégression) KNN
