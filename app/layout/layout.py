@@ -23,7 +23,7 @@ from sklearn import svm
 from sklearn.model_selection import cross_val_score, train_test_split
 
 
-from layout.svr_layout import regression_svm
+from layout.svr_layout import regression_svr
 from layout.log_layout import classification_log
 from layout.knnclas_layout import classification_KNeighborsClassifier
 from layout.knnreg_layout import regression_KNeighborsRegressor
@@ -441,7 +441,7 @@ regression_tabs = dbc.Tabs(
     id='regression_tabs',
     children = [
         dbc.Tab(Regession_regression_lineaire,label="Régression linéaire",tab_id='reg_lin'),
-        dbc.Tab(regression_svm,label="SVR",tab_id ='svr'),
+        dbc.Tab(regression_svr,label="SVR",tab_id ='svr'),
         dbc.Tab(regression_KNeighborsRegressor,label="KNeighborsRegressor", tab_id='KNeighborsRegressor',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
     ]
 )

@@ -19,7 +19,6 @@ import cchardet as chardet
 from detect_delimiter import detect
 import dash_daq as daq
 from sklearn.preprocessing import StandardScaler
-from sklearn import svm
 from sklearn.model_selection import cross_val_score, train_test_split
 
 
@@ -108,12 +107,12 @@ classification_log = dbc.Card(
                         dbc.Row(
                             [
                                 dbc.Col(
-                                    dbc.Label("Taille de l'échantillon de test", html_for="test_size",style={'font-weight': 'bold'}),
+                                    dbc.Label("Taille de l'échantillon de test", html_for="log_test_size",style={'font-weight': 'bold'}),
                                     width=5
                                 ),
                                 dbc.Col(
                                     dcc.Slider(
-                                        id='test_size',min=0.0,max=1.0,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}
+                                        id='log_test_size',min=0.0,max=1.0,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}
                                     ),width=5
                                 )
                             ]
@@ -123,14 +122,14 @@ classification_log = dbc.Card(
                             [
                                 dbc.Col(
                                     [
-                                        dbc.Label("Random seed", html_for="random_state",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='random_state',type='number'),
+                                        dbc.Label("Random seed", html_for="log_random_state",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='log_random_state',type='number'),
                                     ]
                                 ),
                                 dbc.Col(
                                     [
-                                        dbc.Label("K-folds ", html_for="k_fold",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='k_fold',value=5,type='number'),
+                                        dbc.Label("K-folds ", html_for="log_k_fold",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='log_k_fold',value=5,type='number'),
                                     ]
                                 )
                             ],
@@ -143,9 +142,9 @@ classification_log = dbc.Card(
                                 # Type du noyau
                                 dbc.Col(
                                     [
-                                        dbc.Label("Type de noyau (kernel)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
+                                        dbc.Label("Type de noyau (kernel)", html_for="log_kernel_selection",style={'font-weight': 'bold'}),
                                         dcc.Dropdown(
-                                            id='svm_kernel_selection',
+                                            id='log_kernel_selection',
                                             options=[
                                                 {'label': 'linéaire', 'value': 'linear'},
                                                 {'label': 'polynomial', 'value': 'poly'},
@@ -160,8 +159,8 @@ classification_log = dbc.Card(
                                 # Degré pour noyau polynomial
                                 dbc.Col(
                                     [
-                                        dbc.Label("Degré (pour noyau polynomial)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svm_degre',type='number',min=0,max=4,step=1,value=0,),
+                                        dbc.Label("Degré (pour noyau polynomial)", html_for="log_kernel_selection",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='log_degre',type='number',min=0,max=4,step=1,value=0,),
                                     ],
                                 )
                             ]
@@ -173,8 +172,8 @@ classification_log = dbc.Card(
                                 # Paramètre de régularisation
                                 dbc.Col(
                                     [
-                                        dbc.Label("Régularisation (C)", html_for="svm_regularisation_selection",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svm_regularisation_selection',type='number',min=0,max=100,step=0.1,value=0.1,),
+                                        dbc.Label("Régularisation (C)", html_for="log_regularisation_selection",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='log_regularisation_selection',type='number',min=0,max=100,step=0.1,value=0.1,),
                                     ],
                                 ),
                             ],style={'margin-bottom': '1em'}
@@ -185,26 +184,28 @@ classification_log = dbc.Card(
                                 # Epsilon 
                                 dbc.Col(
                                     [
-                                        dbc.Label("Epsilon (ε)",html_for='svm_epsilon',style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svm_epsilon',type='number',value=0.1,min=0,max=100,step=0.1),
+                                        dbc.Label("Epsilon (ε)",html_for='log_epsilon',style={'font-weight': 'bold'}),
+                                        dbc.Input(id='log_epsilon',type='number',value=0.1,min=0,max=100,step=0.1),
                                     ],
                                 )
                             ]
-                        )
-                    
-
+                        ),
+                        html.Br(),
+                        dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
                     ],className='col-6'
                 ),
                 html.Div(
                     [
                         html.H3(html.B("Résultats :")),html.Hr(),
                         dcc.Loading(
-                            id="log-ls-loading-1", 
                             children=[html.Div(id="res_log_GridSearchCV")], 
                             type="default"
-                        ),
-                        #html.Div(id="res_log_GridSearchCV"),html.Br(),html.Hr(),
-                        html.Div(id="res_KNeighborsRegressor_FitPredict"),html.Br(),html.Hr(),
+                        ),html.Hr(),
+
+                        dcc.Loading(
+                            children=[html.Div(id="res_log_FitPredict")], 
+                            type="default"
+                        ),html.Hr(),
                         html.Div(id="res_KNeighborsRegressor_CrossValidation")
                     ],
                     className='col-6'
@@ -216,7 +217,7 @@ classification_log = dbc.Card(
             
             html.Br(),html.Br(),
             
-            dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
+            #dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
             html.Div(id='res_log'),
             html.Div(id='test')
         ],

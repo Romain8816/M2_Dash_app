@@ -40,7 +40,7 @@ from matplotlib import pyplot
 from fonctions.various_functions import get_pandas_dataframe, binariser, centrer_reduire_norm, split_train_test, pre_process
 from fonctions.algo_functions import build_smv, build_KNeighborsRegressor, cross_validation, get_best_params
 
-# (Régression) SVM
+# (Régression) svr
 
 def Gridsearch(app):
     @app.callback(
@@ -134,13 +134,13 @@ def FitPredict(app):
         State(component_id='file_selection',component_property='value'),
         State(component_id='target_selection',component_property='value'),
         State(component_id='features_selection',component_property='value'),
-        State(component_id='test_size',component_property='value'),
-        State(component_id='random_state',component_property='value'),
-        State(component_id='k_fold',component_property='value'),
-        State(component_id='svm_kernel_selection',component_property='value'),          # Noyau
-        State(component_id='svm_regularisation_selection',component_property='value'),  # C
-        State(component_id='svm_epsilon',component_property='value'),
-        State('svm_degre','value'))
+        State(component_id='svr_test_size',component_property='value'),
+        State(component_id='svr_random_state',component_property='value'),
+        State(component_id='svr_k_fold',component_property='value'),
+        State(component_id='svr_kernel_selection',component_property='value'),          # Noyau
+        State(component_id='svr_regularisation_selection',component_property='value'),  # C
+        State(component_id='svr_epsilon',component_property='value'),
+        State('svr_degre','value'))
 
     def CV_score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon,degre):
         if (n_clicks == 0):

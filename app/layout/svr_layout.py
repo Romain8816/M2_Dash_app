@@ -23,7 +23,7 @@ from sklearn import svm
 from sklearn.model_selection import cross_val_score, train_test_split
 
 
-regression_svm = dbc.Card(          
+regression_svr = dbc.Card(          
     children=[
         html.H2(html.B(html.P("Support Vector Regressor", className="card-text"))),
         html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
@@ -111,12 +111,12 @@ regression_svm = dbc.Card(
                         dbc.Row(
                             [
                                 dbc.Col(
-                                    dbc.Label("Taille de l'échantillon de test", html_for="test_size",style={'font-weight': 'bold'}),
+                                    dbc.Label("Taille de l'échantillon de test", html_for="svr_test_size",style={'font-weight': 'bold'}),
                                     width=5
                                 ),
                                 dbc.Col(
                                     dcc.Slider(
-                                        id='test_size',min=0.0,max=1.0,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}
+                                        id='svr_test_size',min=0.0,max=1.0,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}
                                     ),width=5
                                 )
                             ]
@@ -126,14 +126,14 @@ regression_svm = dbc.Card(
                             [
                                 dbc.Col(
                                     [
-                                        dbc.Label("Random state", html_for="random_state",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='random_state',type='number'),
+                                        dbc.Label("Random state", html_for="svr_random_state",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='svr_random_state',type='number'),
                                     ]
                                 ),
                                 dbc.Col(
                                     [
-                                        dbc.Label("K-folds ", html_for="k_fold",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='k_fold',value=5,type='number'),
+                                        dbc.Label("K-folds ", html_for="svr_k_fold",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='svr_k_fold',value=5,type='number'),
                                     ]
                                 )
                             ],
@@ -146,9 +146,9 @@ regression_svm = dbc.Card(
                                 # Type du noyau
                                 dbc.Col(
                                     [
-                                        dbc.Label("Type de noyau (kernel)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
+                                        dbc.Label("Type de noyau (kernel)", html_for="svr_kernel_selection",style={'font-weight': 'bold'}),
                                         dcc.Dropdown(
-                                            id='svm_kernel_selection',
+                                            id='svr_kernel_selection',
                                             options=[
                                                 {'label': 'linéaire', 'value': 'linear'},
                                                 {'label': 'polynomial', 'value': 'poly'},
@@ -163,8 +163,8 @@ regression_svm = dbc.Card(
                                 # Degré pour noyau polynomial
                                 dbc.Col(
                                     [
-                                        dbc.Label("Degré (pour noyau polynomial)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svm_degre',type='number',min=0,max=4,step=1,value=0,),
+                                        dbc.Label("Degré (pour noyau polynomial)", html_for="svr_kernel_selection",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='svr_degre',type='number',min=0,max=4,step=1,value=0,),
                                     ],
                                 )
                             ]
@@ -176,8 +176,8 @@ regression_svm = dbc.Card(
                                 # Paramètre de régularisation
                                 dbc.Col(
                                     [
-                                        dbc.Label("Régularisation (C)", html_for="svm_regularisation_selection",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svm_regularisation_selection',type='number',min=0,max=100,step=0.1,value=0.1,),
+                                        dbc.Label("Régularisation (C)", html_for="svr_regularisation_selection",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='svr_regularisation_selection',type='number',min=0,max=100,step=0.1,value=0.1,),
                                     ],
                                 ),
                             ],style={'margin-bottom': '1em'}
@@ -188,8 +188,8 @@ regression_svm = dbc.Card(
                                 # Epsilon 
                                 dbc.Col(
                                     [
-                                        dbc.Label("Epsilon (ε)",html_for='svm_epsilon',style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svm_epsilon',type='number',value=0.1,min=0,max=100,step=0.1),
+                                        dbc.Label("Epsilon (ε)",html_for='svr_epsilon',style={'font-weight': 'bold'}),
+                                        dbc.Input(id='svr_epsilon',type='number',value=0.1,min=0,max=100,step=0.1),
                                     ],
                                 )
                             ]

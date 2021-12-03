@@ -27,8 +27,6 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.model_selection import validation_curve, GridSearchCV
-from sklearn.svm import SVR
-
 from layout.layout import location_folder, dataset_selection, target_selection,features_selection
 from layout.layout import regression_tabs, classification_tabs
 
@@ -123,23 +121,23 @@ def Gridsearch(app):
                 ]
             )
 
-def fit_predicit(app):
+def FitPredict(app):
     # Fit et predict
     @app.callback(
-        Output('res_log','children'),
-        Input('smv_button','n_clicks'),
+        Output('res_log_GridSearchCV','children'),
+        Input('log_button','n_clicks'),
         State(component_id='file_selection',component_property='value'),
         State(component_id='target_selection',component_property='value'),
         State(component_id='features_selection',component_property='value'),
-        State(component_id='test_size',component_property='value'),
-        State(component_id='random_state',component_property='value'),
-        State(component_id='k_fold',component_property='value'),
-        State(component_id='svm_kernel_selection',component_property='value'),          # Noyau
-        State(component_id='svm_regularisation_selection',component_property='value'),  # C
-        State(component_id='svm_epsilon',component_property='value'),
-        State('svm_degre','value'))
+        State(component_id='log_test_size',component_property='value'),
+        State(component_id='log_random_state',component_property='value'),
+        State(component_id='log_k_fold',component_property='value'),
+        State(component_id='log_kernel_selection',component_property='value'),          # Noyau
+        State(component_id='log_regularisation_selection',component_property='value'),  # C
+        State(component_id='log_epsilon',component_property='value'),
+        State('log_degre','value'))
 
-    def svm (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon,degre):
+    def log (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon,degre):
 
         if (n_clicks == 0):
             PreventUpdate
