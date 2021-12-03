@@ -46,7 +46,7 @@ regression_svm = dbc.Card(
 
                 html.B("Random state "),html.I("par défaut=42"),html.Br(),
                 html.P("Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
-                dcc.Input(id="KNeighborsRegressor_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),
+                dcc.Input(id="svr_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),                
                 dbc.Row(
                     [
                         dbc.Col(
@@ -61,7 +61,8 @@ regression_svm = dbc.Card(
                             )
                         )
                     ]
-                ),                         
+                ),
+                                     
             ]
         ),
 
@@ -84,8 +85,9 @@ regression_svm = dbc.Card(
                         dcc.Dropdown(
                             id='svr_gridCV_scoring',
                             options=[
-                                {'label': "MSE", 'value': "neg_mean_squared_error"},
-                                {'label': "R2", 'value': "r2"},
+                               {'label': "MSE", 'value': "neg_mean_squared_error"},
+                               {'label': "RMSE", 'value': "RMSE"},
+                               {'label': "MAE", 'value': "neg_mean_absolute_error"}
                             ],
                             value = 'neg_mean_squared_error'
                         ),html.Br(),html.Br(),

@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 from dash_bootstrap_components._components.Collapse import Collapse
 from dash_bootstrap_components._components.Row import Row
 from numpy.core.numeric import cross
-from numpy.random.mtrand import random_integers
+from numpy.random.mtrand import RandomState, random_integers
 import plotly.express as px
 import pandas as pd
 from dash.dependencies import Input,Output,State
@@ -51,12 +51,13 @@ def Gridsearch(app):
         State(component_id='target_selection',component_property='value'),
         State(component_id='features_selection',component_property='value'),
         State(component_id='svr_train_size',component_property='value'),
+        State(component_id='svr_random_state',component_property='value'),
         State(component_id='svr_centrer_reduire',component_property='value'),
         State(component_id='svr_gridCV_k_folds',component_property='value'),
         State(component_id='svr_GridSearchCV_njobs',component_property='value'),
         State(component_id='svr_gridCV_scoring',component_property='value'))
 
-    def GridSearchCV_score (n_clicks, file, target, features, train_size, centrer_reduire, k_fold, njobs, metric):
+    def GridSearchCV_score (n_clicks, file, target, features, train_size, random_state, centrer_reduire, k_fold, njobs, metric):
         if (n_clicks==0):
             PreventUpdate
         else:
@@ -67,14 +68,18 @@ def Gridsearch(app):
             df = get_pandas_dataframe(file)
             X= df[features]
             y= df[target]
-            
-            X_train,X_test,y_train,y_test = train_test_split(X,y,train_size=train_size)
+
+            X_train,X_test,y_train,y_test = train_test_split(X,y,train_size=train_size,random_state = random_state)
 
             numerical_features = make_column_selector(dtype_include=np.number)
             categorical_features = make_column_selector(dtype_exclude=np.number)
 
             categorical_pipeline = make_pipeline(SimpleImputer(strategy='most_frequent'),OneHotEncoder(drop='first',sparse=False))
-            numerical_pipeline = make_pipeline(SimpleImputer(),StandardScaler())
+            
+            if (centrer_reduire == ['yes']):
+                numerical_pipeline = make_pipeline(SimpleImputer(),StandardScaler())
+            else :
+                numerical_pipeline = make_pipeline(SimpleImputer())
 
             preprocessor = make_column_transformer((numerical_pipeline,numerical_features),
                                                 (categorical_pipeline,categorical_features))
