@@ -64,8 +64,6 @@ from sklearn.tree import DecisionTreeClassifier,plot_tree
 import matplotlib.pyplot as plt
 from scipy import stats
 
-#from layout.layout import drag_and_drop, location_folder, dataset_selection, target_selection,features_selection #, kmeans_params_and_results
-#from layout.layout import regression_tabs, classification_tabs
 from layout.layout import location_folder, dataset_selection, target_selection,features_selection
 from layout.layout import regression_tabs, classification_tabs
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
@@ -81,7 +79,7 @@ from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, r
 from math import log, sqrt
 from matplotlib import pyplot
 
-from callbacks import svr_callbacks, log_callbacks, knnclas_callbacks, knnreg_callbacks
+from callbacks import svr_callbacks, knnreg_callbacks, knnclas_callbacks, log_callbacks, tree_callbacks, lineareg_callbacks
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_callback_exceptions=True)
 app.title="Machine Learning App"
@@ -116,15 +114,7 @@ app.layout = html.Div(children=[
                 )
             ], className='container-fluid'
         ),
-        #html.Div(id='output-data-upload'), # Affichage du tableau
         html.Div(id='stats'),
-        #dcc.Graph(id='stats'),
-        html.Div(
-            dbc.Checklist(
-                id="centrer_reduire"
-            ),
-            className='container-fluid'
-        ),
         html.Div(
             [
                 # Affichage des tabs, caché par défaut
@@ -243,8 +233,6 @@ def TargetSelection(target,options,feature_selection_value):
 # (INIT) Proposition du/des modèles qu'il est possible de sélectionner selon le type de la variable cible
 
 @app.callback(
-    #Output(component_id='model_selection',component_property='options'),
-    Output(component_id='centrer_reduire',component_property='options'),
     Output(component_id='collapse_tab',component_property='children'),    # Tab de classification ou de régression
     Output(component_id='collapse_tab',component_property='is_open'),     # Affichage des onglets
     Input(component_id='file_selection', component_property='value'),     # Emplacement du fichier
@@ -259,7 +247,6 @@ def ModelSelection(file,num_variables,target_selection,feature_selection,selecte
         # Si la variable est numérique
         if target_selection in num_variables:
             return (
-                [{"label":"centrer réduire","value":"yes"}],
                 regression_tabs,
                 True
             )
@@ -267,13 +254,12 @@ def ModelSelection(file,num_variables,target_selection,feature_selection,selecte
         # Sinon (si la variable est qualitative)
         else:
             return (
-                [{"label":"centrer réduire","value":"yes"}],
                 classification_tabs,
                 True
             )
     # Sinon ne rien faire
     else:
-        return ([],"",False)
+        return ("",False)
         #raise PreventUpdate
 
 
@@ -321,9 +307,8 @@ svr_callbacks.FitPredict(app)
 log_callbacks.Gridsearch(app)
 log_callbacks.FitPredict(app)
 
-
 ########################################################################################################
-# (CRégression) KNN
+# (Régression) KNN
 knnreg_callbacks.Gridsearch(app)
 knnreg_callbacks.FitPredict(app)
 knnreg_callbacks.CrossValidation(app)
@@ -336,418 +321,15 @@ knnclas_callbacks.CrossValidation(app)
 
 ###############################################################################
 ############### Decision Tree
-
-@app.callback(
-    Output(component_id='res_Tree_GridSearchCV',component_property='children'),
-    Output(component_id="ls-loading-output-0_tree", component_property="children"),
-    Input(component_id='Tree_button_GridSearchCV',component_property='n_clicks'),
-    State(component_id='file_selection',component_property='value'),
-    State(component_id='target_selection',component_property='value'),
-    State(component_id='features_selection',component_property='value'),
-    #State(component_id='num_variables',component_property='data'),
-    #State(component_id='KNeighborsClassifier_centrer_reduire',component_property='value'),
-    State(component_id='Tree_GridSearchCV_number_of_folds',component_property='value'),
-    State(component_id='Tree_GridSearchCV_scoring',component_property='value'),
-    State(component_id='Tree_GridSearchCV_njobs',component_property='value'))
-def GridSearch_tree(n_clicks,file,target,features,nb_folds,score,nb_njobs):
-    if (n_clicks == 0):
-        return "",""
-    else:
-        if nb_njobs == "None":
-            nb_njobs = None
-
-        df = get_pandas_dataframe(file)
-
-        X = df.loc[:,features]
-        y = df.loc[:,target]
-
-        # défini certain paramètre à utilisé
-        params = {"criterion":["gini","entropy"],"splitter":["best","random"],
-                  "max_depth":[None,1,2,5,10],"min_samples_split":[2,4,6,8,10,12,20],
-                  "min_samples_leaf":[1,4,6,8,10,20],"max_features":[1,5,10,'auto','sqrt','log2']}
-        grid_search = get_best_params(X, y, "Arbre de decision", params, cv=nb_folds, scoring=score, njobs=nb_njobs)
-        return html.Div(
-            ["GridSearchCV best parameters : {}".format(grid_search[0].best_params_),
-             html.Br(),html.Br(),"GridSearchCV best",
-             html.B(" {} ".format(score)),": ",
-             html.B(["{:.2f}".format(grid_search[0].best_score_)],
-                    style={'color': 'blue'}),html.Br(),
-             html.Br(),"time : {:.2f} sec".format(grid_search[1])]),""
-
-# fit -predit (Ok + affichage de l'arbre)
-@app.callback(
-    Output(component_id='res_Tree_FitPredict', component_property='children'),
-    Output(component_id='ls-loading-output-1_tree', component_property='children'),
-    Input('Tree_button_FitPredict','n_clicks'),
-    Input('tree_plot_button','n_clicks'),
-    #bouton pour afficher le graphe
-    [State('model_selection','value'),
-    State('target_selection','value'),
-    State('features_selection','value'),
-    State('file_selection','value'),
-    State('criterion','value'),
-    State('splitter','value'),
-    State('max_depth','value'),
-    State('min_samples_split','value'),
-    State('min_samples_leaf','value'),
-    State('max_leaf_nodes','value')])
-    #State('diff_metric','value')])
-def fit_predict_function(n_clicks,plot_clicks,model,target,feature,file,criterion,splitter,max_depth,min_samples_split,min_samples_leaf,max_leaf_nodes):
-    #creation du dataframe
-
-    if n_clicks == 0:
-        #print(n_clicks)
-        raise PreventUpdate
-    else :
-        t1 = time.time()
-        #print(n_clicks)
-        df = get_pandas_dataframe(file)
-        #print(df.head(10))
-        #on le fait que si model == arbre decison
-
-            # prendre en compte le parametre None
-        if max_depth == 0:
-            max_depth = None
-        if max_leaf_nodes == 0:
-            max_leaf_nodes = None
-
-        # separt en test et apprentissage
-        X = df.loc[:,feature]
-        y = df.loc[:,target]
-
-        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size = 0.3, random_state=0)
-
-
-        #creation du model
-        tree = build_tree(criterion, splitter, max_depth, min_samples_split,min_samples_leaf,max_leaf_nodes)
-        tree.fit(X_train, y_train)
-
-        #prediction
-        y_pred = tree.predict(X_test)
-        labels = np.unique(y_pred)
-
-        #matrice de confusion
-        df_cm = pd.DataFrame(confusion_matrix(y_test, y_pred,labels=labels),columns=labels, index=labels)
-        df_cm.insert(0, target, df_cm.index)
-
-        #affichage graphique des prédictions réalisé
-        pca = PCA(n_components=2)
-        temp = pca.fit_transform(X_test)
-        coord = pd.DataFrame(temp,columns=["PCA1","PCA2"])
-        Y_pred = pd.DataFrame(y_pred,columns=["tree_clusters"])
-        Y_test = pd.DataFrame(y_test.values,columns=[target])
-
-        result = pd.concat([coord,Y_pred,Y_test],axis=1)
-        fig_knn = px.scatter(result, x="PCA1", y="PCA2", color="tree_clusters", hover_data=['tree_clusters'],
-                         title="PCA du jeu de données {}, y_pred DecisionTreeClassifieur".format(file.split("/")[-1]))
-        fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
-                         title="PCA du jeu de données {}, y_test".format(file.split("/")[-1]))
-
-        t2 = time.time()
-        # affichage l'arbre sortie graphique
-        changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-        if 'plot_button' in changed_id:
-            plot_tree(tree,max_depth=max_depth,
-                             feature_names=feature,
-                             class_names=y.unique(),
-                             filled=True)
-            plt.show()
-
-        #html.P('Résult {}'.format(str(moy)))
-        return html.Div(
-            ["Matrice de confusion : ",html.Br(),
-             dash_table.DataTable(
-                 id='Tree_cm',
-                 columns=[{"name": i, "id": i} for i in df_cm.columns],
-                 data=df_cm.to_dict('records'),),
-             html.Br(),"f1_score : {}".format(f1_score(y_test, y_pred,average="macro")),html.Br(),
-             "recall score : {}".format(recall_score(y_test, y_pred,average="macro")),
-             html.Br(),"precision score : {}".format(precision_score(y_test, y_pred,average="macro")),
-             html.Br(),"accuracy score : {}".format(accuracy_score(y_test, y_pred)),
-             html.Br(),dcc.Graph(
-                 id='res_Tree_FitPredict_inputgraph',
-                 figure=fig_input_data),
-             dcc.Graph(
-                 id='res_Tree_FitPredict_graph',
-                 figure=fig_knn),
-             "Time : {} sec".format(t2-t1)]),""
-
-# Cross Validation (Ok )
-@app.callback(
-    Output(component_id='res_Tree_CrossValidation',component_property='children'),
-    Output(component_id="ls-loading-output-2_tree", component_property="children"),
-    Input(component_id='Tree_button_CrossValidation',component_property='n_clicks'),
-    State(component_id='file_selection',component_property='value'),
-    State(component_id='target_selection',component_property='value'),
-    State(component_id='features_selection',component_property='value'),
-    State('criterion','value'),
-    State('splitter','value'),
-    State('max_depth','value'),
-    State('min_samples_split','value'),
-    State('min_samples_leaf','value'),
-    State('max_leaf_nodes','value'),
-    State(component_id='Tree_cv_number_of_folds',component_property='value'),
-    State(component_id='Tree_cv_scoring',component_property='value'))
-def CV_score(n_clicks,file,target,features,criterion,splitter,max_depth,min_samples_split,min_samples_leaf,max_leaf_nodes,cv_number_of_folds,cv_scoring):
-    if (n_clicks == 0):
-        return "",""
-    else:
-
-        if max_depth == 0:
-            max_depth = None
-        if max_leaf_nodes == 0:
-            max_leaf_nodes = None
-
-        df = get_pandas_dataframe(file)
-
-        X = df[features]
-        Y= df[target]
-
-        tree = build_tree(criterion, splitter, max_depth, min_samples_split,min_samples_leaf,max_leaf_nodes)
-        #clf = DecisionTreeClassifier()
-        res = cross_validation(clf=tree,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
-        #print(res[0])
-        return html.Div([
-            "cross validation ",html.B("{} : ".format(cv_scoring)),
-            html.B(["{}".format(np.mean(res[0]))],style={'color': 'green'}),html.Br(),
-            html.Br(),"time : {} sec".format(res[1])]),""
+tree_callbacks.Gridsearch(app)
+tree_callbacks.FitPredict(app)
+tree_callbacks.CrossValidation(app)
 
 ###############################################################################
 ############### Régression linéaire
-
-#GridSearch Ok
-@app.callback(
-    Output(component_id='res_Linear_GridSearchCV',component_property='children'),
-    Output(component_id="ls-loading-output-0_linear", component_property="children"),
-    Input(component_id='Linear_button_GridSearchCV',component_property='n_clicks'),
-    State(component_id='file_selection',component_property='value'),
-    State(component_id='target_selection',component_property='value'),
-    State(component_id='features_selection',component_property='value'),
-    State(component_id='num_variables',component_property='data'),
-    State(component_id='centrer_reduire',component_property='value'),
-    State(component_id='Linear_GridSearchCV_number_of_folds',component_property='value'),
-    State(component_id='Linear_GridSearchCV_scoring',component_property='value'),
-    State(component_id='Linear_GridSearchCV_njobs',component_property='value'))
-def GridSearch_linear(n_clicks,file,target,features,num_variable,centre_reduit,nb_folds,score,nb_njobs):
-    if (n_clicks == 0):
-        return "",""
-    else:
-        if nb_njobs == "None":
-            nb_njobs = None
-
-        if score == "RMSE" or score == "MSE":
-            scoring = 'neg_mean_squared_error'
-        else :
-            scoring = 'neg_mean_absolute_error'
-        df = get_pandas_dataframe(file)
-        check_type_heterogeneity = all(element in num_variable for element in features)
-        if check_type_heterogeneity == False:
-            bin = binariser(df=df,features=features,target=target)
-            df = bin[0]
-            features = bin[1]
-        if centre_reduit == ['yes']:
-            X = centrer_reduire_norm(df=df,features=features)
-        else:
-            X = df[features]
-        y = df.loc[:,target]
-
-        # défini certain paramètre à utilisé
-        params = {"fit_intercept":[True,False],"copy_X":[True,False],
-                  "n_jobs":[None,1,2,5,10],"positive":[True,False]}
-        grid_search = get_best_params(X, y, "Regression lineaire", params, cv=nb_folds, scoring=scoring,njobs=nb_njobs)
-
-
-        if score == "RMSE":
-            sc = np.sqrt(abs(grid_search[0].best_score_))
-            score == "RMSE"
-        else :
-            sc = abs(grid_search[0].best_score_)
-
-
-        #print(grid_search[0].best_params_)
-        return html.Div(
-            ["GridSearchCV best parameters : {}".format(grid_search[0].best_params_),
-             html.Br(),html.Br(),"GridSearchCV best",
-             html.B(" {} ".format(score)),": ",
-             html.B(["{:.2f}".format(sc)],
-                    style={'color': 'blue'}),html.Br(),
-             html.Br(),"time : {:.2f} sec".format(grid_search[1])]),""
-
-# fit -predit (Ok juste peut etre problème de metric)
-@app.callback(
-    Output(component_id='res_Linear_FitPredict', component_property='children'),
-    Output(component_id='ls-loading-output-1_Linear', component_property='children'),
-    Input('Linear_button_FitPredict','n_clicks'),
-    [State('model_selection','value'),
-    State('target_selection','value'),
-    State('features_selection','value'),
-    State('num_variables','data'),
-    State('file_selection','value'),
-    State('centrer_reduire','value'),
-    State('fit_intercept','value'),
-    State('copy_X','value'),
-    State('n_jobs','value')])
-def fit_predict_functionlinear(n_clicks,model,target,features,num_variable,file,centre_reduire,fit_intercept,copy_X,n_jobs):
-    #creation du dataframe
-
-    if n_clicks == 0:
-        #print(n_clicks)
-        raise PreventUpdate
-    else :
-        t1 = time.time()
-        #print(n_clicks)
-        df = get_pandas_dataframe(file)
-        check_type_heterogeneity = all(element in num_variable for element in features)
-
-        if check_type_heterogeneity == False:
-            bin = binariser(df=df,features=features,target=target)
-            df = bin[0]
-            features = bin[1]
-        if centre_reduire == ['yes']:
-            X = centrer_reduire_norm(df=df,features=features)
-        else:
-            X = df[features]
-
-            # prendre en compte le parametre None
-        if fit_intercept == 'True':
-            fit_intercept = True
-        else :
-            fit_intercept = False
-
-        if copy_X == 'True':
-            copy_X = True
-        else :
-            copy_X = False
-
-
-
-        y = df.loc[:,target]
-
-        # separt en test et apprentissage
-        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size = 0.3, random_state=0)
-
-
-        #creation du model
-        LinearReg = buid_linearReg(fit_intercept, copy_X, n_jobs)
-        LinearReg.fit(X_train,y_train)
-        #prediction
-
-        y_pred = LinearReg.predict(X_test)
-        #affichage graphique des prédictions réalisé
-        t2 = time.time()
-
-        #calcul des coeficient directeur de la droite
-        def predict(x):
-            return a * x + b
-
-        a, b, r_value, p_value, std_err = stats.linregress(X_test.iloc[:,0],y_pred)
-        fitline = predict(X_test.iloc[:,0])
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=X_test.iloc[:,0],
-            y=y_pred,
-            mode='markers',
-            name='y_pred',
-            marker={'size': 8, "opacity":0.8}
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=X_test.iloc[:,0],
-            y=y_test,
-            mode='markers',
-            name='y_test',
-            marker={'size': 8, "opacity":0.5}
-        ))
-        fig.add_trace(go.Scatter(
-            x=X_test.iloc[:,0],
-            y=fitline,
-            name='regression'))
-
-        fig.update_layout(
-            title="Comparaison des points prédits avec les points tests",
-            xaxis_title="X",
-            yaxis_title="Y",
-            legend_title="",
-            font=dict(
-                family="Courier New, monospace",
-                size=12,
-                color="black"
-            )
-        )
-        diff = t2-t1
-        return html.Div([
-            html.B("Carré moyen des erreurs (MSE) "),": {:.2f}".format(mean_squared_error(y_test, y_pred)),html.Br(),html.Br(),
-            html.B("Erreur quadratique moyenne (RMSE) "),": {:.2f}".format(np.sqrt(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),
-            html.B("Coéfficient de détermination (R2) "),": {:.2f}".format(r2_score(y_test, y_pred)),html.Br(),html.Br(),
-            "temps : {:.2f} sec".format(diff),html.Br(),html.Br(),
-            dcc.Graph(id='res_Linear_FitPredict_graph', figure=fig),html.Br(),html.Br(),
-            #dcc.Graph(id='res_regLinear_FitPredict_graph', figure=fig2),html.Br(),html.Br(),
-                         ]),""
-
-
-# Cross Validation (Ok )
-@app.callback(
-    Output(component_id='res_Linear_CrossValidation',component_property='children'),
-    Output(component_id="ls-loading-output-2_Linear", component_property="children"),
-    Input(component_id='Linear_button_CrossValidation',component_property='n_clicks'),
-    State(component_id='file_selection',component_property='value'),
-    State(component_id='target_selection',component_property='value'),
-    State(component_id='features_selection',component_property='value'),
-    State('num_variables','data'),
-    State('centrer_reduire','value'),
-    State('fit_intercept','value'),
-    State('copy_X','value'),
-    State('n_jobs','value'),
-    State(component_id='Linear_cv_number_of_folds',component_property='value'),
-    State(component_id='Linear_cv_scoring',component_property='value'))
-def CV_score_linear(n_clicks,file,target,features,num_variable,centre_reduire,fit_intercept,copy_X,n_jobs,cv_number_of_folds,cv_scoring):
-    if (n_clicks == 0):
-        return "",""
-    else:
-
-        if fit_intercept == 'True':
-            fit_intercept = True
-        else :
-            fit_intercept = False
-
-        if copy_X == 'True':
-            copy_X = True
-        else :
-            copy_X = False
-        if cv_scoring == "RMSE" or cv_scoring == "MSE":
-            scoring = 'neg_mean_squared_error'
-        else :
-            scoring = 'neg_mean_absolute_error'
-
-        df = get_pandas_dataframe(file)
-
-        check_type_heterogeneity = all(element in num_variable for element in features)
-
-        if check_type_heterogeneity == False:
-            bin = binariser(df=df,features=features,target=target)
-            df = bin[0]
-            features = bin[1]
-        if centre_reduire == ['yes']:
-            X = centrer_reduire_norm(df=df,features=features)
-        else:
-            X = df[features]
-
-        Y= df[target]
-
-        LinearReg = buid_linearReg(fit_intercept, copy_X, n_jobs)
-
-        res = cross_validation(clf=LinearReg,X=X,Y=Y,cv=cv_number_of_folds,scoring=scoring)
-        if cv_scoring == "RMSE":
-            metric = np.sqrt(abs(np.mean(res[0])))
-        else :
-            metric = abs(np.mean(res[0]))
-
-        return html.Div([
-            "cross validation ",html.B("{} : ".format(cv_scoring)),
-            html.B(["{:.2f}".format(metric)],style={'color': 'green'}),html.Br(),
-            html.Br(),"time : {:.2f} sec".format(res[1])]),""
+lineareg_callbacks.Gridsearch(app)
+lineareg_callbacks.FitPredict(app)
+lineareg_callbacks.CrossValidation(app)
 
 
 app.css.append_css({'external_url': './assets/style4columns.css' # LINUX - MAC-OS

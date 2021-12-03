@@ -5,11 +5,9 @@ import dash_bootstrap_components as dbc
 
 ######################################
 # Le code ci-dessous définit l'affichage
-# des options sur la page web pour la
-# section "Optimisation des hyperpatamètres'
+# des options sur la page web pour
 # de l'algorithme de regression KNN
 ######################################
-
 regression_KNeighborsRegressor = dbc.Card(
     children=[
 

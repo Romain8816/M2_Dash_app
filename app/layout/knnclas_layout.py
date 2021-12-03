@@ -5,11 +5,9 @@ import dash_bootstrap_components as dbc
 
 ######################################
 # Le code ci-dessous définit l'affichage
-# des options sur la page web pour la
-# section "Optimisation des hyperpatamètres'
-# de l'algorithme de classification KNN
+# des options sur la page web pour
+# l'algorithme de classification KNN
 ######################################
-
 classification_KNeighborsClassifier = dbc.Card(
     children=[
 

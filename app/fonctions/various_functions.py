@@ -69,7 +69,7 @@ def centrer_reduire_norm(df,features):
 # de données initial, retourne un jeu
 # d'apprentissage et un jeu de test
 ######################################
-def split_train_test(X,Y,random_state,test_size,shuffle,stratify):
+def split_train_test(X,Y,random_state,test_size,shuffle="True",stratify="False"):
     if shuffle == "True":
         shuffle = True
         if stratify == "False":
