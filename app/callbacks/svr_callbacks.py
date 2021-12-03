@@ -36,7 +36,7 @@ from layout.layout import location_folder, dataset_selection, target_selection,f
 from layout.layout import regression_tabs, classification_tabs
 
 from sklearn import metrics
-from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score
+from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score, make_scorer
 from math import sqrt
 from matplotlib import pyplot
 
@@ -81,15 +81,22 @@ def Gridsearch(app):
             model = Pipeline([('preprocessor',preprocessor),('clf',clf)])
             params = {
                 'clf__kernel':['linear','poly','rbf','sigmoid'],
-                'clf__degree': [i for i in range(1,6)],
+                'clf__degree': [i for i in range(1,5)],
                 'clf__gamma': ['scale','auto'],
-                'clf__coef0': [i for i in np.arange(0.1,1,0.2)],
-                'clf__C' : [i for i in np.arange(0.1,1,0.2)],
-                'clf__epsilon' : [i for i in np.arange(0.1,1,0.2)]
+                'clf__coef0': [i for i in np.arange(0.1,1,0.3)],
+                'clf__C' : [i for i in np.arange(0.1,1,0.3)],
+                'clf__epsilon' : [i for i in np.arange(0.1,1,0.3)]
             }
-            grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=n_jobs)
-            grid.fit(X_train,y_train)
 
+            if (metric=="RMSE"):
+                grid = GridSearchCV(model,params,scoring="neg_mean_squared_error",cv=k_fold,n_jobs=n_jobs)
+                grid.fit(X_train,y_train)
+                grid.best_score_ = np.sqrt(abs(grid.best_score_))
+            else:
+                grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=n_jobs)
+                grid.fit(X_train,y_train)
+                grid.best_score_ = abs(grid.best_score_)
+                
             t2 = time.time()
             diff = t2 - t1
 

@@ -58,8 +58,9 @@ regression_svm = dbc.Card(
                         dcc.Dropdown(
                             id='svr_gridCV_scoring',
                             options=[
-                                {'label': "MSE", 'value': "neg_mean_squared_error"},
-                                {'label': "R2", 'value': "r2"},
+                               {'label': "MSE", 'value': "neg_mean_squared_error"},
+                               {'label': "RMSE", 'value': "RMSE"},
+                               {'label': "MAE", 'value': "neg_mean_absolute_error"}
                             ],
                             value = 'neg_mean_squared_error'
                         ),html.Br(),html.Br(),
