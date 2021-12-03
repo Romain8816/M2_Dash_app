@@ -72,6 +72,7 @@ def Gridsearch(app):
             X_train,X_test,y_train,y_test = train_test_split(X,y,train_size=train_size,random_state = random_state)
 
             model = build_model(centrer_reduire,SVR)
+
             params = {
                 'clf__kernel':['linear','poly','rbf','sigmoid'],
                 'clf__degree': [i for i in range(1,4)],
@@ -152,11 +153,11 @@ def FitPredict(app):
             params = {
                 "kernel" : kernel,
                 "C" : regularisation,
-                "epsilon" : epsilon
+                "epsilon" : epsilon,
+                "degree" : degre
             }
 
             model = build_model(centrer_reduire,SVR,**params)
-            #model = build_smv(kernel,regularisation,epsilon) # instanciation du modèle
             model.fit(X_train,y_train) # apprentissage
             y_pred = model.predict(X_test) # prédiction
 
