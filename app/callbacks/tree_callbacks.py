@@ -43,9 +43,8 @@ from scipy import stats
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
 from layout.layout import location_folder, dataset_selection, target_selection,features_selection
 from layout.layout import regression_tabs, classification_tabs
-from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
 from fonctions.algo_functions import *
-from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
+from fonctions.various_functions import *
 
 
 #                                             #
@@ -56,6 +55,11 @@ def Gridsearch(app) :
     @app.callback(
         Output(component_id='res_Tree_GridSearchCV',component_property='children'),
         Output(component_id="ls-loading-output-0_tree", component_property="children"),
+        State(component_id='tree_test_size',component_property='value'),
+        State(component_id='tree_random_state',component_property='value'),
+        State(component_id='tree_centrer_reduire',component_property='value'),
+        State(component_id='tree_shuffle',component_property='value'),
+        State(component_id='tree_stratify',component_property='value'),
         Input(component_id='Tree_button_GridSearchCV',component_property='n_clicks'),
         State(component_id='file_selection',component_property='value'),
         State(component_id='target_selection',component_property='value'),
@@ -63,7 +67,7 @@ def Gridsearch(app) :
         State(component_id='Tree_GridSearchCV_number_of_folds',component_property='value'),
         State(component_id='Tree_GridSearchCV_scoring',component_property='value'),
         State(component_id='Tree_GridSearchCV_njobs',component_property='value'))
-    def GridSearch_tree(n_clicks,file,target,features,nb_folds,score,nb_njobs):
+    def GridSearch_tree(test_size,random_state,centrer_reduire,shuffle,stratify,n_clicks,file,target,features,nb_folds,score,nb_njobs):
         if (n_clicks == 0):
             return "",""
         else:
@@ -75,18 +79,25 @@ def Gridsearch(app) :
             X = df.loc[:,features]
             y = df.loc[:,target]
 
+            # split train test
+            X_train,X_test,y_train,y_test = split_train_test(X=X,Y=y,random_state=random_state,test_size=test_size,shuffle=shuffle,stratify=stratify)
+
             # défini certain paramètre à utilisé
             params = {"criterion":["gini","entropy"],"splitter":["best","random"],
                       "max_depth":[1,5,10],"min_samples_split":[2,5,10,20],
                       "min_samples_leaf":[1,4,8,20],"max_features":['auto','sqrt','log2']}
-            grid_search = get_best_params(X, y, "Arbre de decision", params, cv=nb_folds, scoring=score, njobs=nb_njobs)
+            grid_search = get_best_params(X_train, y_train, "Arbre de decision", params, cv=nb_folds, scoring=score, njobs=nb_njobs)
+            best_params = pd.Series(grid_search[0].best_params_,index=grid_search[0].best_params_.keys())
+            best_params = pd.DataFrame(best_params)
+            best_params.reset_index(level=0, inplace=True)
+            best_params.columns = ["paramètres","valeurs"]
             return html.Div(
-                ["GridSearchCV best parameters : {}".format(grid_search[0].best_params_),
+                ["GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),dash_table.DataTable(id='tree_params_opti',columns=[{"name": i, "id": i} for i in best_params.columns],data=best_params.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in best_params.columns]),
                  html.Br(),html.Br(),"GridSearchCV best",
                  html.B(" {} ".format(score)),": ",
                  html.B(["{:.2f}".format(grid_search[0].best_score_)],
                         style={'color': 'blue'}),html.Br(),
-                 html.Br(),"time : {:.2f} sec".format(grid_search[1])]),""
+                 html.Br(),"temps : {:.2f} sec".format(grid_search[1])]),""
 
 
 def FitPredict(app) :
@@ -94,6 +105,11 @@ def FitPredict(app) :
     @app.callback(
         Output(component_id='res_Tree_FitPredict', component_property='children'),
         Output(component_id='ls-loading-output-1_tree', component_property='children'),
+        State(component_id='tree_test_size',component_property='value'),
+        State(component_id='tree_random_state',component_property='value'),
+        State(component_id='tree_centrer_reduire',component_property='value'),
+        State(component_id='tree_shuffle',component_property='value'),
+        State(component_id='tree_stratify',component_property='value'),
         Input('Tree_button_FitPredict','n_clicks'),
         Input('tree_plot_button','n_clicks'),
         #bouton pour afficher le graphe
@@ -107,8 +123,7 @@ def FitPredict(app) :
         State('min_samples_split','value'),
         State('min_samples_leaf','value'),
         State('max_leaf_nodes','value')])
-        #State('diff_metric','value')])
-    def fit_predict_function(n_clicks,plot_clicks,model,target,feature,file,criterion,splitter,max_depth,min_samples_split,min_samples_leaf,max_leaf_nodes):
+    def fit_predict_function(test_size,random_state,centrer_reduire,shuffle,stratify,n_clicks,plot_clicks,model,target,feature,file,criterion,splitter,max_depth,min_samples_split,min_samples_leaf,max_leaf_nodes):
 
         if n_clicks == 0:
             #print(n_clicks)
@@ -130,8 +145,8 @@ def FitPredict(app) :
             X = df.loc[:,feature]
             y = df.loc[:,target]
 
-            X_train,X_test,y_train,y_test = train_test_split(X,y,test_size = 0.3, random_state=0)
-
+            # split train test
+            X_train,X_test,y_train,y_test = split_train_test(X=X,Y=y,random_state=random_state,test_size=test_size,shuffle=shuffle,stratify=stratify)
 
             #creation du model
             tree = build_tree(criterion, splitter, max_depth, min_samples_split,min_samples_leaf,max_leaf_nodes)
@@ -153,10 +168,10 @@ def FitPredict(app) :
             Y_test = pd.DataFrame(y_test.values,columns=[target])
 
             result = pd.concat([coord,Y_pred,Y_test],axis=1)
-            fig_knn = px.scatter(result, x="PCA1", y="PCA2", color="tree_clusters", hover_data=['tree_clusters'],
-                             title="PCA du jeu de données {}, y_pred DecisionTreeClassifieur".format(file.split("/")[-1]))
+            fig_tree = px.scatter(result, x="PCA1", y="PCA2", color="tree_clusters", hover_data=['tree_clusters'],
+                             title="PCA des classes prédites par le modèle")
             fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
-                             title="PCA du jeu de données {}, y_test".format(file.split("/")[-1]))
+                             title="PCA du jeu de données test")
 
             t2 = time.time()
             # affichage l'arbre sortie graphique
@@ -179,13 +194,14 @@ def FitPredict(app) :
                  "recall score : {}".format(recall_score(y_test, y_pred,average="macro")),
                  html.Br(),"precision score : {}".format(precision_score(y_test, y_pred,average="macro")),
                  html.Br(),"accuracy score : {}".format(accuracy_score(y_test, y_pred)),
-                 html.Br(),dcc.Graph(
-                     id='res_Tree_FitPredict_inputgraph',
-                     figure=fig_input_data),
+                 html.Br(),
                  dcc.Graph(
                      id='res_Tree_FitPredict_graph',
-                     figure=fig_knn),
-                 "Time : {} sec".format(t2-t1)]),""
+                     figure=fig_tree),
+                 dcc.Graph(
+                     id='res_Tree_FitPredict_inputgraph',
+                     figure=fig_input_data),
+                 "temps : {} sec".format(t2-t1)]),""
 
 
 def CrossValidation(app):
@@ -227,4 +243,4 @@ def CrossValidation(app):
             return html.Div([
                 "cross validation ",html.B("{} : ".format(cv_scoring)),
                 html.B(["{}".format(np.mean(res[0]))],style={'color': 'green'}),html.Br(),
-                html.Br(),"time : {} sec".format(res[1])]),""
+                html.Br(),"temps : {} sec".format(res[1])]),""

@@ -109,7 +109,7 @@ def FitPredict(app):
             fig_knn = px.scatter(result, x="PCA1", y="PCA2", color="knn_clusters", hover_data=['knn_clusters'],
                              title="PCA des classes prédites par le modèle".format(file.split("/")[-1]))
             fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
-                             title="PCA du jeu de données test ")
+                             title="PCA du jeu de données test")
             t2 = time.time() # stop
             diff = t2 - t1 # calcul du temps écoulé pour la section 'performance du modèle sur le jeu test'
             if len(set(list(Y))) > 2: # si le nombre de classe de la variable explicative est > 2 (non binaire), on renvoie les métriques pertinentes

@@ -11,7 +11,7 @@ import dash_bootstrap_components as dbc
 Regession_regression_lineaire = dbc.Card(
     children=[
 
-            html.H2(html.B(html.P("Linear Regression", className="card-text"))),html.Br(),html.Hr(),html.Br(),
+            html.H2(html.B(html.P("Linear Regression", className="card-text"))),html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),html.Br(),
 
             html.Div(
                 [
@@ -19,43 +19,84 @@ Regession_regression_lineaire = dbc.Card(
                      dbc.Row(
                          [
                              dbc.Col(
+                                [
                                 dbc.Label("Taille de l'échantillon test", html_for="lr_test_size",style={'font-weight': 'bold'}),
-                                width=4
+                                 ],width=3
                             ),
                             dbc.Col(
-                                dcc.Input(id="lr_test_size", type="number", placeholder="input with range",min=0.1,max=0.5, step=0.1,value=0.3)
-                            )
+                                [
+                                dcc.Slider(id='lr_test_size',min=0.1,max=0.5,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}),
+                                ],width=1
+                            ),
+                            dbc.Col(
+                               width=2
+                           ),
+                            dbc.Col(
+                               [
+                               html.B("Random state "),html.I("par défaut=42"),html.P(" Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
+                               ],width=3
+                           ),
+                           dbc.Col(
+                              [
+                              dcc.Input(id="lr_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),
+                              ],width=1
+                           )
                         ]
                     ),
-
-                    html.B("Random state "),html.I("par défaut=42"),html.Br(),
-                    html.P("Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
-                    dcc.Input(id="lr_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),
-                    dbc.Row(
+                   dbc.Row(
                         [
                             dbc.Col(
                                 [
                                     dbc.Label("Centrer réduire",  html_for="lr_centrer_reduire",style={'font-weight': 'bold'}),
-                                ], width=1
+                                ], width=3
                             ),
                             dbc.Col(
+                                [
                                 dbc.Checklist(
                                     id="lr_centrer_reduire",
                                     options=[{"value":"yes"}]
                                 )
+                                ],width=1
                             )
                         ]
                     ),
-
+                    html.Br(),
+                    dbc.Row(
+                         [
+                             dbc.Col(
+                                 [
+                                    html.B("shuffle "),html.I("par défaut shuffle=True"),html.Br(),html.P("s'il faut ou non mélanger les données avant de les diviser.", className="card-text"),
+                                 ], width=3
+                             ),
+                             dbc.Col(
+                                [
+                                    dcc.Dropdown(
+                                        id='lr_shuffle',
+                                        options=[
+                                            {'label': 'True', 'value': 'True'},
+                                            {'label': 'False', 'value': 'False'},
+                                        ],
+                                        value = 'True'
+                                    )
+                                    ], width=1
+                                 ),
+                              dbc.Col(
+                                   width=2
+                                  ),
+                              ]
+                             ),
+                    html.Br(),
                 ]
             ),
+
+            html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
 
             html.Div([
 
                 html.Div([
 
 
-                    html.H4(html.B("Optimisation des hyperparamètres :")),html.Br(),html.Br(),
+                    html.H4(html.B("Optimisation des hyperparamètres :")),html.Br(),
                     html.B("GridSearchCV_number_of_folds "),
                     html.I("par défaut=10"),html.Br(),
                     html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée pour l'optimisation des hyperparamètres.", className="card-text"),
@@ -77,7 +118,7 @@ Regession_regression_lineaire = dbc.Card(
 
                         ],
                         value = 'MSE'
-                    ),html.Br(),html.Br(),
+                    ),html.Br(),
                     html.B("GridSearchCV_njobs "),html.I("par défaut=-1"),html.Br(),
                     html.P("Selectionner le nombre de coeurs (-1 = tous les coeurs)", className="card-text"),
                     dcc.Dropdown(
@@ -92,12 +133,11 @@ Regession_regression_lineaire = dbc.Card(
                             {'label': 30, 'value': 30},{'label': 31, 'value': 31},{'label': 32, 'value': 32},{'label': 'None', 'value': 'None'}
                         ],
                         value = -1
-                    ),html.Br(),html.Br(),
+                    ),html.Br(),
                     dbc.Button("valider GridSearchCV", color="info",id='Linear_button_GridSearchCV',n_clicks=0),
-                    dcc.Loading(id="ls-loading-0_linear", children=[html.Div(id="ls-loading-output-0_linear")], type="default"),html.Br(),html.Hr(),html.Br(),
+                    dcc.Loading(id="ls-loading-0_linear", children=[html.Div(id="ls-loading-output-0_linear")], type="default"),html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
                     # on passe à une autre section (modification des paramètre) >> propre à la fonction
-                    html.H4(html.B("Paramètres : ")),
-                    html.Hr(),html.Br(),
+                    html.H4(html.B("Performance du modèle sur le jeu de test :")),html.Br(),
                     html.B("fit_intercept : ")," ",
                     dcc.Dropdown(
                         id='fit_intercept',
@@ -118,6 +158,7 @@ Regession_regression_lineaire = dbc.Card(
                     ),
                     html.Br(),
                     html.B("n_jobs : "),"",
+                    html.Br(),
                     dcc.Input(
                         id='n_jobs',
                         type='number',
@@ -127,9 +168,9 @@ Regession_regression_lineaire = dbc.Card(
                     ),
                     html.Br(),html.Br(),
                     dbc.Button("Valider Fit & Predict", color="danger",id='Linear_button_FitPredict',n_clicks=0),
-                    dcc.Loading(id="ls-loading-1_linear", children=[html.Div(id="ls-loading-output-1_Linear")], type="default"),html.Br(),html.Hr(),html.Br(),
+                    dcc.Loading(id="ls-loading-1_linear", children=[html.Div(id="ls-loading-output-1_Linear")], type="default"),html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
                     # on passe à une autre section (validation croissé)
-                    html.H4(html.B("validation croisée :")),html.Br(),html.Br(),
+                    html.H4(html.B("validation croisée :")),html.Br(),
                     html.B("cv_number_of_folds "),
                     html.I("par défaut=10"),html.Br(),
                     html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée.", className="card-text"),
@@ -149,7 +190,7 @@ Regession_regression_lineaire = dbc.Card(
 
                         ],
                         value = 'MSE'
-                    ),html.Br(),html.Hr(),
+                    ),html.Br(),
                     dbc.Button("Valider CrossValidation", color="success",id='Linear_button_CrossValidation',n_clicks=0),
                     dcc.Loading(id="ls-loading-2_Linear", children=[html.Div(id="ls-loading-output-2_Linear")], type="default")
 
@@ -157,10 +198,10 @@ Regession_regression_lineaire = dbc.Card(
 
                 html.Div([
 
-                    html.H3(html.B("Résultats :")),
-                    html.Div(id="res_Linear_GridSearchCV"),html.Br(),html.Hr(),html.Br(),
-                    html.Div(id="res_Linear_FitPredict"),html.Br(),html.Hr(),html.Br(),
-                    html.Div(id="res_Linear_CrossValidation"), html.Hr(),
+                    html.H3(html.B("Résultats :")),html.Br(),
+                    html.Div(id="res_Linear_GridSearchCV"),html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),html.Br(),
+                    html.Div(id="res_Linear_FitPredict"),html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),html.Br(),
+                    html.Div(id="res_Linear_CrossValidation"),
 
                 ],className="six columns",style={"margin":10}),
 

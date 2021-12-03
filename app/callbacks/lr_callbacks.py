@@ -97,13 +97,17 @@ def Gridsearch(app):
             else :
                 sc = abs(grid_search[0].best_score_)
 
+            best_params = pd.Series(grid_search[0].best_params_,index=grid_search[0].best_params_.keys())
+            best_params = pd.DataFrame(best_params)
+            best_params.reset_index(level=0, inplace=True)
+            best_params.columns = ["paramètres","valeurs"]
             return html.Div(
-                ["GridSearchCV best parameters : {}".format(grid_search[0].best_params_),
+                ["GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),dash_table.DataTable(id='lr_params_opti',columns=[{"name": i, "id": i} for i in best_params.columns],data=best_params.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in best_params.columns]),
                  html.Br(),html.Br(),"GridSearchCV best",
                  html.B(" {} ".format(score)),": ",
-                 html.B(["{:.2f}".format(sc)],
+                 html.B(["{:.4f}".format(sc)],
                         style={'color': 'blue'}),html.Br(),
-                 html.Br(),"time : {:.2f} sec".format(grid_search[1])]),""
+                 html.Br(),"temps : {:.4f} sec".format(grid_search[1])]),""
 
 
 def FitPredict(app):
@@ -170,10 +174,19 @@ def FitPredict(app):
             a, b, r_value, p_value, std_err = stats.linregress(X_test.iloc[:,0],y_pred)
             fitline = predict(X_test.iloc[:,0])
 
+
+            k = 0
+            more_uniq_col = ""
+            for col in X_test: # récupérer la variable explicative avec le plus de valeurs uniques pour la représentation graphique
+                if len(X_test[col].unique()) > k:
+                    more_uniq_col = col
+                    k = len(X_test[col].unique())
+
+
             fig = go.Figure()
 
             fig.add_trace(go.Scatter(
-                x=X_test.iloc[:,0],
+                x=X_test[more_uniq_col],
                 y=y_pred,
                 mode='markers',
                 name='y_pred',
@@ -181,7 +194,7 @@ def FitPredict(app):
             ))
 
             fig.add_trace(go.Scatter(
-                x=X_test.iloc[:,0],
+                x=X_test[more_uniq_col],
                 y=y_test,
                 mode='markers',
                 name='y_test',
@@ -194,8 +207,8 @@ def FitPredict(app):
 
             fig.update_layout(
                 title="Comparaison des points prédits avec les points tests",
-                xaxis_title="X",
-                yaxis_title="Y",
+                xaxis_title="{}".format(more_uniq_col),
+                yaxis_title="{}".format(target),
                 legend_title="",
                 font=dict(
                     family="Courier New, monospace",
@@ -205,10 +218,10 @@ def FitPredict(app):
             )
             diff = t2-t1
             return html.Div([
-                html.B("Carré moyen des erreurs (MSE) "),": {:.2f}".format(mean_squared_error(y_test, y_pred)),html.Br(),html.Br(),
-                html.B("Erreur quadratique moyenne (RMSE) "),": {:.2f}".format(np.sqrt(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),
-                html.B("Coéfficient de détermination (R2) "),": {:.2f}".format(r2_score(y_test, y_pred)),html.Br(),html.Br(),
-                "temps : {:.2f} sec".format(diff),html.Br(),html.Br(),
+                html.B("Carré moyen des erreurs (MSE) "),": {:.4f}".format(mean_squared_error(y_test, y_pred)),html.Br(),html.Br(),
+                html.B("Erreur quadratique moyenne (RMSE) "),": {:.4f}".format(np.sqrt(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),
+                html.B("Coéfficient de détermination (R2) "),": {:.4f}".format(r2_score(y_test, y_pred)),html.Br(),html.Br(),
+                "temps : {:.4f} sec".format(diff),html.Br(),html.Br(),
                 dcc.Graph(id='res_Linear_FitPredict_graph', figure=fig),html.Br(),html.Br(),
                 #dcc.Graph(id='res_regLinear_FitPredict_graph', figure=fig2),html.Br(),html.Br(),
                              ]),""
@@ -264,5 +277,5 @@ def CrossValidation(app) :
 
             return html.Div([
                 "cross validation ",html.B("{} : ".format(cv_scoring)),
-                html.B(["{:.2f}".format(metric)],style={'color': 'green'}),html.Br(),
-                html.Br(),"time : {:.2f} sec".format(res[1])]),""
+                html.B(["{:.4f}".format(metric)],style={'color': 'green'}),html.Br(),
+                html.Br(),"temps : {:.4f} sec".format(res[1])]),""

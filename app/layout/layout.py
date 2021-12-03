@@ -113,6 +113,7 @@ features_selection = dbc.Row(
         ),
     ],
     className="mb-3",
+
 )
 
 ########################################################################################################
@@ -132,8 +133,8 @@ classification_tabs = dbc.Tabs(
 regression_tabs = dbc.Tabs(
     id='regression_tabs',
     children = [
-        dbc.Tab(Regession_regression_lineaire,label="Régression linéaire",tab_id='reg_lin'),
-        dbc.Tab(regression_svr,label="SVR",tab_id ='svr'),
+        dbc.Tab(Regession_regression_lineaire,label="Régression linéaire",tab_id='reg_lin',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(regression_svr,label="SVR",tab_id ='svr',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
         dbc.Tab(regression_KNeighborsRegressor,label="KNeighborsRegressor", tab_id='KNeighborsRegressor',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
     ]
 )

@@ -64,11 +64,9 @@ from sklearn.tree import DecisionTreeClassifier,plot_tree
 import matplotlib.pyplot as plt
 from scipy import stats
 
-from layout.layout import location_folder, dataset_selection, target_selection,features_selection
-from layout.layout import regression_tabs, classification_tabs
+from layout.layout import location_folder, dataset_selection, target_selection, features_selection, regression_tabs, classification_tabs
 from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
 from fonctions.algo_functions import *
-from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn import svm
 from sklearn import metrics
@@ -79,7 +77,7 @@ from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, r
 from math import log, sqrt
 from matplotlib import pyplot
 
-from callbacks import svr_callbacks, knnreg_callbacks, knnclas_callbacks, log_callbacks, tree_callbacks, lineareg_callbacks
+from callbacks import svr_callbacks, knnreg_callbacks, knnclas_callbacks, log_callbacks, tree_callbacks, lr_callbacks
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_callback_exceptions=True)
 app.title="Machine Learning App"
@@ -102,6 +100,7 @@ app.layout = html.Div(children=[
                 html.H6('Master SISE (2021-2022)',style={'color':'white','font-weight':'bold'})
             ],className='container-fluid top'
         ),
+        html.Br(),
         html.Div(
             [
                 dbc.Row(
@@ -327,9 +326,9 @@ tree_callbacks.CrossValidation(app)
 
 ###############################################################################
 ############### Régression linéaire
-lineareg_callbacks.Gridsearch(app)
-lineareg_callbacks.FitPredict(app)
-lineareg_callbacks.CrossValidation(app)
+lr_callbacks.Gridsearch(app)
+lr_callbacks.FitPredict(app)
+lr_callbacks.CrossValidation(app)
 
 
 app.css.append_css({'external_url': './assets/style4columns.css' # LINUX - MAC-OS

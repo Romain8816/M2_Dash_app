@@ -100,7 +100,7 @@ def FitPredict(app):
             # replacer NA par moyenne ou mode, binariser et centrer réduire
             X,Y = pre_process(df=df,num_variables=num_variables,features=features,centrer_reduire=centrer_reduire,target=target)
             # split train test
-            X_train,X_test,y_train,y_test = split_train_test(X=X,Y=Y,random_state=random_state,test_size=test_size,shuffle=shuffle,stratify=stratify)
+            X_train,X_test,y_train,y_test = split_train_test(X=X,Y=Y,random_state=random_state,test_size=test_size,shuffle=shuffle)
 
             clf = build_KNeighborsRegressor(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric) # instanciation du modèle
             clf.fit(X_train.values,y_train.values) # apprentissage
