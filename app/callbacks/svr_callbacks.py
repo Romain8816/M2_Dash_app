@@ -33,7 +33,7 @@ from layout.layout import location_folder, dataset_selection, target_selection,f
 from layout.layout import regression_tabs, classification_tabs
 
 from sklearn import metrics
-from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score
+from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score, mean_absolute_error
 from math import sqrt
 from matplotlib import pyplot
 
@@ -75,7 +75,7 @@ def Gridsearch(app):
             categorical_features = make_column_selector(dtype_exclude=np.number)
 
             categorical_pipeline = make_pipeline(SimpleImputer(strategy='most_frequent'),OneHotEncoder(drop='first',sparse=False))
-            
+
             if (centrer_reduire == ['yes']):
                 numerical_pipeline = make_pipeline(SimpleImputer(),StandardScaler())
             else :
@@ -129,7 +129,7 @@ def Gridsearch(app):
 def FitPredict(app):
     # Fit et predict 
     @app.callback(
-        Output('res_svm','children'),
+        Output('res_svr_FitPredict','children'),
         Input('smv_button','n_clicks'),
         State(component_id='file_selection',component_property='value'),
         State(component_id='target_selection',component_property='value'),
@@ -153,19 +153,16 @@ def FitPredict(app):
             y= df[target]
 
             #X,Y = pre_process(df=df,num_variables=num_variables,features=features,centrer_reduire=centrer_reduire,target=target)
-            stratify = "False"
-            X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state,stratify=stratify)
+            X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state)
 
             model = build_smv(kernel,regularisation,epsilon) # instanciation du modèle
             model.fit(X_train,y_train) # apprentissage
             y_pred = model.predict(X_test) # prédiction
 
+            t2 = time.time() # stop
+            diff = t2 - t1 # calcul du temps écoulé pour la section 'performance du modèle sur le jeu test'
 
-            score = cross_validate(model,X_train,y_train,cv=k_fold,scoring=('r2','neg_mean_squared_error'),return_train_score=True)
-
-            rsquared = score['test_r2'].mean()
-            mse = score['test_neg_mean_squared_error'].mean()
-
+            #score = cross_validate(model,X_train,y_train,cv=k_fold,scoring=('r2','neg_mean_squared_error'),return_train_score=True)
 
             fig = px.imshow(df.corr())
             
@@ -179,14 +176,15 @@ def FitPredict(app):
             # fig.add_trace(go.Scatter(x=np.arange(0,100), y=train_score.mean(axis=1),mode='lines',name='training score'))
             # fig.update_layout(title="Score en fonction de C")
 
-            return [    
-                        html.Div(
-                            [
-                                dbc.Label("Validation score"),
-                                html.P('R² : '+str(rsquared)),
-                                html.P('MSE : '+str(mse))
-                            ]
-                        ),
-                        dcc.Graph(figure=fig)
-                    ]
+            return html.Div(
+                [
+                    #dbc.Label("Validation score"),
+                    html.B("Carré moyen des erreurs (MSE) "),": {:.4f}".format(abs(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),
+                    html.B("Erreur quadratique moyenne (RMSE) "),": {:.4f}".format(np.sqrt(abs(mean_squared_error(y_test, y_pred)))),html.Br(),html.Br(),
+                    html.B("Erreur moyenne absolue (MAE) "),": {:.4f}".format(abs(mean_absolute_error(y_test, y_pred))),html.Br(),html.Br(),
+                    html.B("Coefficient de détermination (R2) "),": {:.4f}".format(abs(r2_score(y_test, y_pred))),html.Br(),html.Br(),
+                    "temps : {:.4f} sec".format(diff),html.Br(),html.Br(),
+                    dcc.Graph(id='res_KNeighborsRegressor_FitPredict_knngraph', figure=fig),html.Br(),html.Br(),
+                ]
+            )     
 

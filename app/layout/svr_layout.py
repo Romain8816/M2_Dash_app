@@ -70,6 +70,7 @@ regression_svm = dbc.Card(
 
         html.Div(
             [
+                # Div des paramètres sur la gauche
                 html.Div(
                     children = 
                     [
@@ -125,7 +126,7 @@ regression_svm = dbc.Card(
                             [
                                 dbc.Col(
                                     [
-                                        dbc.Label("Random seed", html_for="random_state",style={'font-weight': 'bold'}),
+                                        dbc.Label("Random state", html_for="random_state",style={'font-weight': 'bold'}),
                                         dbc.Input(id='random_state',type='number'),
                                     ]
                                 ),
@@ -192,34 +193,34 @@ regression_svm = dbc.Card(
                                     ],
                                 )
                             ]
-                        )
-                    
-
+                        ),
+                        html.Br(),
+                        dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
                     ],className='col-6'
                 ),
+                # Div des résultats sur la droite 
                 html.Div(
                     [
-                        html.H3(html.B("Résultats :")),html.Hr(),
+                        html.H3(html.B("Résultats :")),
                         dcc.Loading(
-                            id="svr-ls-loading-1", 
                             children=[html.Div(id="res_svr_GridSearchCV")], 
                             type="default"
-                        ),
-                        #html.Div(id="res_svr_GridSearchCV"),html.Br(),html.Hr(),
-                        html.Div(id="res_KNeighborsRegressor_FitPredict"),html.Br(),html.Hr(),
+                        ),html.Hr(),
+                        
+                        dcc.Loading(
+                            children=[html.Div(id="res_svr_FitPredict")], 
+                            type="default"
+                        ),html.Hr(),
                         html.Div(id="res_KNeighborsRegressor_CrossValidation")
                     ],
                     className='col-6'
                 )
             ],className="row"
         ),
-
-            html.Br(),html.Br(),
             
+            #dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
             html.Br(),html.Br(),
-            
-            dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
-            html.Div(id='res_svm'),
+            #html.Div(id='res_svr_FitPredict'),
             html.Div(id='test')
         ],
     body=True

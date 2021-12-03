@@ -146,7 +146,16 @@ def FitPredict(app):
             ))
             t2 = time.time() # stop
             diff = t2 - t1 # calcul du temps écoulé pour la section 'performance du modèle sur le jeu test'
-            return html.Div([html.B("Carré moyen des erreurs (MSE) "),": {:.4f}".format(abs(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),html.B("Erreur quadratique moyenne (RMSE) "),": {:.4f}".format(math.sqrt(abs(mean_squared_error(y_test, y_pred)))),html.Br(),html.Br(),html.B("Erreur moyenne absolue (MAE) "),": {:.4f}".format(abs(mean_absolute_error(y_test, y_pred))),html.Br(),html.Br(),html.B("Coéfficient de détermination (R2) "),": {:.4f}".format(abs(r2_score(y_test, y_pred))),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff),html.Br(),html.Br(),dcc.Graph(id='res_KNeighborsRegressor_FitPredict_knngraph', figure=fig),html.Br(),html.Br(),]),""
+            return html.Div(
+                [
+                    html.B("Carré moyen des erreurs (MSE) "),": {:.4f}".format(abs(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),
+                    html.B("Erreur quadratique moyenne (RMSE) "),": {:.4f}".format(math.sqrt(abs(mean_squared_error(y_test, y_pred)))),html.Br(),html.Br(),
+                    html.B("Erreur moyenne absolue (MAE) "),": {:.4f}".format(abs(mean_absolute_error(y_test, y_pred))),html.Br(),html.Br(),
+                    html.B("Coefficient de détermination (R2) "),": {:.4f}".format(abs(r2_score(y_test, y_pred))),html.Br(),html.Br(),
+                    "temps : {:.4f} sec".format(diff),html.Br(),html.Br(),
+                    dcc.Graph(id='res_KNeighborsRegressor_FitPredict_knngraph', figure=fig),html.Br(),html.Br(),
+                ]
+            ),""
 
 ######################################
 # Callback en charge de faire la validation
