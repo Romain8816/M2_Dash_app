@@ -44,7 +44,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.compose import make_column_transformer, make_column_selector
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import make_pipeline, Pipeline
 
 import time
 
@@ -129,11 +129,33 @@ def build_smv(kernel,regularisation,epsilon):
     preprocessor = make_column_transformer((numerical_pipeline,numerical_features),
                                             (categorical_pipeline,categorical_features))
 
-    model = make_pipeline(preprocessor,SVR(kernel=kernel,C=regularisation,epsilon=epsilon))
+    model = make_pipeline(preprocessor, SVR(kernel=kernel,C=regularisation,epsilon=epsilon))
 
     #print(sorted(model.get_params().keys()))
     #print(sorted(model.metrics.SCORERS.keys()))
     return model
+
+def build_model(centrer_reduire,clf,**params):
+
+    numerical_features = make_column_selector(dtype_include=np.number)
+    categorical_features = make_column_selector(dtype_exclude=np.number)
+
+    categorical_pipeline = make_pipeline(SimpleImputer(strategy='most_frequent'),OneHotEncoder(drop='first',sparse=False))
+
+    if (centrer_reduire == ['yes']):
+        numerical_pipeline = make_pipeline(SimpleImputer(),StandardScaler())
+    else :
+        numerical_pipeline = make_pipeline(SimpleImputer())
+
+    preprocessor = make_column_transformer((numerical_pipeline,numerical_features),
+                                            (categorical_pipeline,categorical_features))
+
+    clf = clf
+    model = Pipeline([('preprocessor',preprocessor),('clf',clf(**params))])
+    return model
+
+    
+
 
 ######################################
 # Cette fonction est en charge d'instancier

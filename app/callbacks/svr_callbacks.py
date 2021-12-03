@@ -38,7 +38,7 @@ from math import sqrt
 from matplotlib import pyplot
 
 from fonctions.various_functions import get_pandas_dataframe, binariser, centrer_reduire_norm, split_train_test, pre_process
-from fonctions.algo_functions import build_smv, build_KNeighborsRegressor, cross_validation, get_best_params
+from fonctions.algo_functions import build_smv, build_KNeighborsRegressor, cross_validation, get_best_params, build_model
 
 # (Régression) svr
 
@@ -71,25 +71,10 @@ def Gridsearch(app):
 
             X_train,X_test,y_train,y_test = train_test_split(X,y,train_size=train_size,random_state = random_state)
 
-            numerical_features = make_column_selector(dtype_include=np.number)
-            categorical_features = make_column_selector(dtype_exclude=np.number)
-
-            categorical_pipeline = make_pipeline(SimpleImputer(strategy='most_frequent'),OneHotEncoder(drop='first',sparse=False))
-
-            if (centrer_reduire == ['yes']):
-                numerical_pipeline = make_pipeline(SimpleImputer(),StandardScaler())
-            else :
-                numerical_pipeline = make_pipeline(SimpleImputer())
-
-            preprocessor = make_column_transformer((numerical_pipeline,numerical_features),
-                                                (categorical_pipeline,categorical_features))
-
-
-            clf = SVR()
-            model = Pipeline([('preprocessor',preprocessor),('clf',clf)])
+            model = build_model(centrer_reduire,SVR)
             params = {
                 'clf__kernel':['linear','poly','rbf','sigmoid'],
-                'clf__degree': [i for i in range(1,5)],
+                'clf__degree': [i for i in range(1,4)],
                 'clf__gamma': ['scale','auto'],
                 'clf__coef0': [i for i in np.arange(0.1,1,0.3)],
                 'clf__C' : [i for i in np.arange(0.1,1,0.3)],
@@ -111,11 +96,11 @@ def Gridsearch(app):
             best_params.columns = ["paramètres","valeur"]
 
             if (metric=="RMSE"):
-                grid = GridSearchCV(model,params,scoring="neg_mean_squared_error",cv=k_fold,n_jobs=n_jobs)
+                grid = GridSearchCV(model,params,scoring="neg_mean_squared_error",cv=k_fold,n_jobs=njobs)
                 grid.fit(X_train,y_train)
                 grid.best_score_ = np.sqrt(abs(grid.best_score_))
             else:
-                grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=n_jobs)
+                grid = GridSearchCV(model,params,scoring=metric,cv=k_fold,n_jobs=njobs)
                 grid.fit(X_train,y_train)
                 grid.best_score_ = abs(grid.best_score_)
                 
@@ -145,13 +130,14 @@ def FitPredict(app):
         State(component_id='features_selection',component_property='value'),
         State(component_id='svr_test_size',component_property='value'),
         State(component_id='svr_random_state',component_property='value'),
+        State(component_id='svr_centrer_reduire',component_property='value'),
         State(component_id='svr_k_fold',component_property='value'),
         State(component_id='svr_kernel_selection',component_property='value'),          # Noyau
         State(component_id='svr_regularisation_selection',component_property='value'),  # C
         State(component_id='svr_epsilon',component_property='value'),
         State('svr_degre','value'))
 
-    def CV_score (n_clicks,file,target,features,test_size,random_state,k_fold,kernel,regularisation,epsilon,degre):
+    def CV_score (n_clicks,file,target,features,test_size,random_state,centrer_reduire,k_fold,kernel,regularisation,epsilon,degre):
         if (n_clicks == 0):
             PreventUpdate
         else:
@@ -161,10 +147,16 @@ def FitPredict(app):
             X= df[features]
             y= df[target]
 
-            #X,Y = pre_process(df=df,num_variables=num_variables,features=features,centrer_reduire=centrer_reduire,target=target)
             X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state)
 
-            model = build_smv(kernel,regularisation,epsilon) # instanciation du modèle
+            params = {
+                "kernel" : kernel,
+                "C" : regularisation,
+                "epsilon" : epsilon
+            }
+
+            model = build_model(centrer_reduire,SVR,**params)
+            #model = build_smv(kernel,regularisation,epsilon) # instanciation du modèle
             model.fit(X_train,y_train) # apprentissage
             y_pred = model.predict(X_test) # prédiction
 
