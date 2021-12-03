@@ -23,31 +23,59 @@ from sklearn import svm
 from sklearn.model_selection import cross_val_score, train_test_split
 
 
-regression_svm = dbc.Card(          
+regression_svr = dbc.Card(          
     children=[
-        html.H2(html.B(html.P("Support Vector Regressor", className="card-text"))),html.Br(),
+        html.H2(html.B(html.P("Support Vector Regressor", className="card-text"))),
+        html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
 
         html.Div(
             [
+                 html.H4(html.B("Paramètres généraux")),html.Br(),
+                 dbc.Row(
+                     [
+                         dbc.Col(
+                            dbc.Label("Taille de l'échantillon d'entrainement", html_for="svr_train_size",style={'font-weight': 'bold'}),
+                            width=2
+                        ),
+                        dbc.Col(
+                            dcc.Slider(id='svr_train_size',min=0.0,max=1.0,step=0.1,value=0.7,tooltip={"placement": "bottom", "always_visible": True}),
+                            width=2
+                        )
+                    ]
+                ),
+
+                html.B("Random state "),html.I("par défaut=42"),html.Br(),
+                html.P("Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
+                dcc.Input(id="svr_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),                
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                dbc.Label("Centrer réduire",  html_for="svr_centrer_reduire",style={'font-weight': 'bold'}),
+                            ], width=1
+                        ),
+                        dbc.Col(
+                            dbc.Checklist(
+                                id="svr_centrer_reduire",
+                                options=[{"value":"yes"}]
+                            )
+                        )
+                    ]
+                ),
+                                     
+            ]
+        ),
+
+        html.Hr(),
+
+        html.Div(
+            [
+                # Div des paramètres sur la gauche
                 html.Div(
                     children = 
                     [
-                        html.H3(html.B("Settings")),html.Hr(),
                         html.H4(html.B("Optimisation des hyperparamètres :")),html.Br(),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    dbc.Label("Taille de l'échantillon d'entrainement", html_for="train_size",style={'font-weight': 'bold'}),
-                                    width=5
-                                ),
-                                dbc.Col(
-                                    dcc.Slider(
-                                        id='train_size',min=0.0,max=1.0,step=0.1,value=0.7,tooltip={"placement": "bottom", "always_visible": True}
-                                        #className="col-sm-6 col-md-5 col-lg-4",# Taille de la slider sur 3 colonnes 
-                                    ),width=5
-                                )
-                            ]
-                        ),
+
                         html.B("GridSearchCV_number_of_folds "),html.I("par défaut=10"),html.Br(),
 
                         html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée pour l'optimisation des hyperparamètres.", className="card-text"),
@@ -77,19 +105,18 @@ regression_svm = dbc.Card(
                         
                         html.Br(),html.Hr(),
                         
-                        html.H4(html.B("Paramètrage du modèle et Fit & Predict :")),html.Br(),
+                        html.H4(html.B("Performance du modèle sur le jeu de test :")),html.Br(),
 
                 
                         dbc.Row(
                             [
                                 dbc.Col(
-                                    dbc.Label("Taille de l'échantillon de test", html_for="test_size",style={'font-weight': 'bold'}),
+                                    dbc.Label("Taille de l'échantillon de test", html_for="svr_test_size",style={'font-weight': 'bold'}),
                                     width=5
                                 ),
                                 dbc.Col(
                                     dcc.Slider(
-                                        id='test_size',min=0.0,max=1.0,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}
-                                        #className="col-sm-6 col-md-5 col-lg-4",# Taille de la slider sur 3 colonnes 
+                                        id='svr_test_size',min=0.0,max=1.0,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}
                                     ),width=5
                                 )
                             ]
@@ -99,14 +126,14 @@ regression_svm = dbc.Card(
                             [
                                 dbc.Col(
                                     [
-                                        dbc.Label("Random seed", html_for="random_state",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='random_state',type='number'),
+                                        dbc.Label("Random state", html_for="svr_random_state",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='svr_random_state',type='number'),
                                     ]
                                 ),
                                 dbc.Col(
                                     [
-                                        dbc.Label("K-folds ", html_for="k_fold",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='k_fold',value=5,type='number'),
+                                        dbc.Label("K-folds ", html_for="svr_k_fold",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='svr_k_fold',value=5,type='number'),
                                     ]
                                 )
                             ],
@@ -119,9 +146,9 @@ regression_svm = dbc.Card(
                                 # Type du noyau
                                 dbc.Col(
                                     [
-                                        dbc.Label("Type de noyau (kernel)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
+                                        dbc.Label("Type de noyau (kernel)", html_for="svr_kernel_selection",style={'font-weight': 'bold'}),
                                         dcc.Dropdown(
-                                            id='svm_kernel_selection',
+                                            id='svr_kernel_selection',
                                             options=[
                                                 {'label': 'linéaire', 'value': 'linear'},
                                                 {'label': 'polynomial', 'value': 'poly'},
@@ -136,8 +163,8 @@ regression_svm = dbc.Card(
                                 # Degré pour noyau polynomial
                                 dbc.Col(
                                     [
-                                        dbc.Label("Degré (pour noyau polynomial)", html_for="svm_kernel_selection",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svm_degre',type='number',min=0,max=4,step=1,value=0,),
+                                        dbc.Label("Degré (pour noyau polynomial)", html_for="svr_kernel_selection",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='svr_degre',type='number',min=0,max=4,step=1,value=0,),
                                     ],
                                 )
                             ]
@@ -149,8 +176,8 @@ regression_svm = dbc.Card(
                                 # Paramètre de régularisation
                                 dbc.Col(
                                     [
-                                        dbc.Label("Régularisation (C)", html_for="svm_regularisation_selection",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svm_regularisation_selection',type='number',min=0,max=100,step=0.1,value=0.1,),
+                                        dbc.Label("Régularisation (C)", html_for="svr_regularisation_selection",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='svr_regularisation_selection',type='number',min=0,max=100,step=0.1,value=0.1,),
                                     ],
                                 ),
                             ],style={'margin-bottom': '1em'}
@@ -161,39 +188,39 @@ regression_svm = dbc.Card(
                                 # Epsilon 
                                 dbc.Col(
                                     [
-                                        dbc.Label("Epsilon (ε)",html_for='svm_epsilon',style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svm_epsilon',type='number',value=0.1,min=0,max=100,step=0.1),
+                                        dbc.Label("Epsilon (ε)",html_for='svr_epsilon',style={'font-weight': 'bold'}),
+                                        dbc.Input(id='svr_epsilon',type='number',value=0.1,min=0,max=100,step=0.1),
                                     ],
                                 )
                             ]
-                        )
-                    
-
+                        ),
+                        html.Br(),
+                        dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
                     ],className='col-6'
                 ),
+                # Div des résultats sur la droite 
                 html.Div(
                     [
-                        html.H3(html.B("Résultats :")),html.Hr(),
+                        html.H3(html.B("Résultats :")),
                         dcc.Loading(
-                            id="svr-ls-loading-1", 
                             children=[html.Div(id="res_svr_GridSearchCV")], 
                             type="default"
-                        ),
-                        #html.Div(id="res_svr_GridSearchCV"),html.Br(),html.Hr(),
-                        html.Div(id="res_KNeighborsRegressor_FitPredict"),html.Br(),html.Hr(),
+                        ),html.Hr(),
+                        
+                        dcc.Loading(
+                            children=[html.Div(id="res_svr_FitPredict")], 
+                            type="default"
+                        ),html.Hr(),
                         html.Div(id="res_KNeighborsRegressor_CrossValidation")
                     ],
                     className='col-6'
                 )
             ],className="row"
         ),
-
-            html.Br(),html.Br(),
             
+            #dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
             html.Br(),html.Br(),
-            
-            dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
-            html.Div(id='res_svm'),
+            #html.Div(id='res_svr_FitPredict'),
             html.Div(id='test')
         ],
     body=True

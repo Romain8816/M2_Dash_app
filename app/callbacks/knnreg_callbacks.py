@@ -57,12 +57,21 @@ def Gridsearch(app):
             diff = t2 - t1 # calcul du temps écoulé pour la section 'optimisation des hyperparamètres'
             if GridSearchCV_scoring == "RMSE":
                 grid_search.best_score_ = math.sqrt(abs(grid_search.best_score_))
-            return html.Div(["GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),dash_table.DataTable(id='KNeighborsRegressor_params_opti',columns=[{"name": i, "id": i} for i in best_params.columns],data=best_params.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in best_params.columns]),html.Br(),html.Br(),"GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.4f}".format(abs(grid_search.best_score_))],style={'color': 'blue'}),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff)]),""
+            return html.Div(
+                    ["GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),
+                    dash_table.DataTable(
+                        id='KNeighborsRegressor_params_opti',
+                        columns=[{"name": i, "id": i} for i in best_params.columns],
+                        data=best_params.to_dict('records'),
+                        style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in best_params.columns]),
+                        html.Br(),html.Br(),
+                        "GridSearchCV meilleur ",html.B(" {} ".format(GridSearchCV_scoring)),": ",html.B(["{:.4f}".format(abs(grid_search.best_score_))],style={'color': 'blue'}),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff)]
+            ),""
 
 ######################################
 # Callback en charge d'apprendre le modèle de regression KNN sur
 # le jeu de données d'entrainement et de calculer
-# ses performance sur le jeu de données test
+# ses performances sur le jeu de données test
 ######################################
 def FitPredict(app):
     @app.callback(
@@ -93,10 +102,13 @@ def FitPredict(app):
             X,Y = pre_process(df=df,num_variables=num_variables,features=features,centrer_reduire=centrer_reduire,target=target)
             # split train test
             stratify = "False"
+
             X_train,X_test,y_train,y_test = split_train_test(X=X,Y=Y,random_state=random_state,test_size=test_size,shuffle=shuffle,stratify=stratify)
+
             clf = build_KNeighborsRegressor(n_neighbors=n_neighbors,weights=weights,algorithm=algorithm,leaf_size=leaf_size,p=p,metric=metric) # instanciation du modèle
             clf.fit(X_train.values,y_train.values) # apprentissage
             y_pred = clf.predict(X_test.values) # prédiction
+            
             k = 0
             more_uniq_col = ""
             for col in X_test: # récupérer la variable explicative avec le plus de valeurs uniques pour la représentation graphique
@@ -134,7 +146,16 @@ def FitPredict(app):
             ))
             t2 = time.time() # stop
             diff = t2 - t1 # calcul du temps écoulé pour la section 'performance du modèle sur le jeu test'
-            return html.Div([html.B("Carré moyen des erreurs (MSE) "),": {:.4f}".format(abs(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),html.B("Erreur quadratique moyenne (RMSE) "),": {:.4f}".format(math.sqrt(abs(mean_squared_error(y_test, y_pred)))),html.Br(),html.Br(),html.B("Erreur moyenne absolue (MAE) "),": {:.4f}".format(abs(mean_absolute_error(y_test, y_pred))),html.Br(),html.Br(),html.B("Coéfficient de détermination (R2) "),": {:.4f}".format(abs(r2_score(y_test, y_pred))),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff),html.Br(),html.Br(),dcc.Graph(id='res_KNeighborsRegressor_FitPredict_knngraph', figure=fig),html.Br(),html.Br(),]),""
+            return html.Div(
+                [
+                    html.B("Carré moyen des erreurs (MSE) "),": {:.4f}".format(abs(mean_squared_error(y_test, y_pred))),html.Br(),html.Br(),
+                    html.B("Erreur quadratique moyenne (RMSE) "),": {:.4f}".format(math.sqrt(abs(mean_squared_error(y_test, y_pred)))),html.Br(),html.Br(),
+                    html.B("Erreur moyenne absolue (MAE) "),": {:.4f}".format(abs(mean_absolute_error(y_test, y_pred))),html.Br(),html.Br(),
+                    html.B("Coefficient de détermination (R2) "),": {:.4f}".format(abs(r2_score(y_test, y_pred))),html.Br(),html.Br(),
+                    "temps : {:.4f} sec".format(diff),html.Br(),html.Br(),
+                    dcc.Graph(id='res_KNeighborsRegressor_FitPredict_knngraph', figure=fig),html.Br(),html.Br(),
+                ]
+            ),""
 
 ######################################
 # Callback en charge de faire la validation
