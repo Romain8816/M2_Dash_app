@@ -38,7 +38,7 @@ from math import sqrt
 from matplotlib import pyplot
 
 from fonctions.various_functions import get_pandas_dataframe, binariser, centrer_reduire_norm, split_train_test, pre_process
-from fonctions.algo_functions import build_smv, build_KNeighborsRegressor, cross_validation, get_best_params, build_model
+from fonctions.algo_functions import build_smv, build_KNeighborsRegressor, cross_validation, get_best_params, build_model, cross_validation
 
 # (Régression) svr
 
@@ -133,13 +133,12 @@ def FitPredict(app):
         State(component_id='svr_test_size',component_property='value'),
         State(component_id='svr_random_state',component_property='value'),
         State(component_id='svr_centrer_reduire',component_property='value'),
-        State(component_id='svr_k_fold',component_property='value'),
         State(component_id='svr_kernel_selection',component_property='value'),          # Noyau
         State(component_id='svr_regularisation_selection',component_property='value'),  # C
         State(component_id='svr_epsilon',component_property='value'),
         State('svr_degre','value'))
 
-    def CV_score (n_clicks,file,target,features,test_size,random_state,centrer_reduire,k_fold,kernel,regularisation,epsilon,degre):
+    def fit_predict_svr (n_clicks,file,target,features,test_size,random_state,centrer_reduire,kernel,regularisation,epsilon,degre):
         if (n_clicks == 0):
             PreventUpdate
         else:
@@ -165,28 +164,6 @@ def FitPredict(app):
             t2 = time.time() # stop
             diff = t2 - t1 # calcul du temps écoulé pour la section 'performance du modèle sur le jeu test'
 
-            # mesh_size = .02
-            # margin = 0
-            # x_min, x_max = X.sepal_width.min() - margin, X.sepal_width.max() + margin
-            # y_min, y_max = X.sepal_length.min() - margin, X.sepal_length.max() + margin
-            # xrange = np.arange(x_min, x_max, mesh_size)
-            # yrange = np.arange(y_min, y_max, mesh_size)
-            # xx, yy = np.meshgrid(xrange, yrange)
-
-
-    #         x_range = np.linspace(X_test.min(), X_test.max(), 100)
-    #         y_range = model.predict(x_range.reshape(-1, 1))
-
-    #         fig = go.Figure([
-    #             go.Scatter(x=X_train.squeeze(), y=y_train, 
-    #                name='train', mode='markers'),
-    #             go.Scatter(x=X_test.squeeze(), y=y_test, 
-    #                name='test', mode='markers'),
-    #             go.Scatter(x=x_range, y=y_range, 
-    #                name='prediction')
-    # ])
-
-            #fig = px.line(x=X_test['sepal_width'], y=y_pred, labels={'x':'t', 'y':'cos(t)'})
             k = 0
             more_uniq_col = ""
             for col in X_test: # récupérer la variable explicative avec le plus de valeurs uniques pour la représentation graphique
@@ -221,18 +198,6 @@ def FitPredict(app):
                     color="black"
             ))
 
-            #fig = px.imshow(df.corr())
-            
-            #fig = px.scatter_matrix(df,dimensions=features)
-
-            # train_score, val_score = validation_curve(model,X_train,y_train,param_name='svr__C',param_range=np.arange(0,100),cv=k_fold)
-            
-            # fig = go.Figure()
-
-            # fig.add_trace(go.Scatter(x=np.arange(0,100), y=val_score.mean(axis=1),mode='lines',name='validation score'))
-            # fig.add_trace(go.Scatter(x=np.arange(0,100), y=train_score.mean(axis=1),mode='lines',name='training score'))
-            # fig.update_layout(title="Score en fonction de C")
-
             return html.Div(
                 [
                     #dbc.Label("Validation score"),
@@ -245,3 +210,58 @@ def FitPredict(app):
                 ]
             )     
 
+def CrossValidation(app):
+    @app.callback(
+        Output(component_id='res_svr_CrossValidation',component_property='children'),
+        Input(component_id='svr_button_CrossValidation',component_property='n_clicks'),
+        State(component_id='file_selection',component_property='value'),
+        State(component_id='target_selection',component_property='value'),
+        State(component_id='features_selection',component_property='value'),
+        State(component_id='svr_centrer_reduire',component_property='value'),
+        State(component_id='svr_cv_number_of_folds',component_property='value'),
+        State(component_id='svr_cv_scoring',component_property='value'),
+        State(component_id='svr_kernel_selection',component_property='value'),          # Noyau
+        State(component_id='svr_regularisation_selection',component_property='value'),  # C
+        State(component_id='svr_epsilon',component_property='value'),
+        State(component_id='svr_degre',component_property = 'value'))
+        
+    def CV_score(n_clicks,file,target,features,centrer_reduire,k_fold,cv_scoring, kernel,regularisation,epsilon,degre):
+        if (n_clicks == 0):
+            PreventUpdate
+        else:
+            t1 = time.time() # start
+            df = get_pandas_dataframe(file)
+
+            X = df[features]
+            y = df[target]
+
+            params = {
+                "kernel" : kernel,
+                "C" : regularisation,
+                "epsilon" : epsilon,
+                "degree" : degre
+            }
+
+            model = build_model(centrer_reduire,SVR,**params)
+
+            if cv_scoring == "MAE":
+                cv_res = cross_val_score(estimator=model, X=X, y=y, cv = k_fold, scoring = "neg_mean_absolute_error")
+                cv_res = abs(np.mean(cv_res))
+            elif cv_scoring == "RMSE" :
+                cv_res = cross_val_score(estimator=model, X=X, y=y, cv = k_fold, scoring = "neg_mean_squared_error")
+                cv_res = np.sqrt(abs(np.mean(cv_res)))
+            else:
+                cv_res = cross_val_score(estimator=model, X=X, y=y, cv = k_fold, scoring = "neg_mean_squared_error")
+                cv_res = abs(np.mean(cv_res))
+
+
+
+            t2 = time.time()# stop
+            diff = t2 - t1 # calcul du temps écoulé pour la section 'validation croisée'
+            return html.Div(
+                [
+                    "cross validation ",html.B("{} : ".format(cv_scoring)),
+                    html.B(["{:.4f}".format(cv_res)],style={'color': 'green'}),html.Br(),html.Br(),
+                    "temps : {:.4f} sec".format(diff)
+                ]
+            )

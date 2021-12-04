@@ -104,10 +104,12 @@ regression_svr = dbc.Card(
                         dbc.Button("valider GridSearchCV",color ="info",id='svr_button_GridSearchCV',n_clicks=0),
                         
                         html.Br(),html.Hr(),
-                        
-                        html.H4(html.B("Performance du modèle sur le jeu de test :")),html.Br(),
 
-                
+
+
+
+                        # Fit predict
+                        html.H4(html.B("Performance du modèle sur le jeu de test :")),html.Br(),
                         dbc.Row(
                             [
                                 dbc.Col(
@@ -122,22 +124,7 @@ regression_svr = dbc.Card(
                             ]
 
                         ),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        dbc.Label("Random state", html_for="svr_random_state",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svr_random_state',type='number'),
-                                    ]
-                                ),
-                                dbc.Col(
-                                    [
-                                        dbc.Label("K-folds ", html_for="svr_k_fold",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='svr_k_fold',value=5,type='number'),
-                                    ]
-                                )
-                            ],
-                        ),
+                        
                         html.Br(),html.Br(),
 
                         # Paramètres de l'algo
@@ -196,6 +183,31 @@ regression_svr = dbc.Card(
                         ),
                         html.Br(),
                         dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
+
+                        html.Br(),html.Hr(),
+
+
+                        # Validation Croisée
+
+                        html.H4(html.B("Validation croisée :")),html.Br(),
+
+                        html.B("cv_number_of_folds "),html.I("par défaut=5"),html.Br(),
+                        html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée.", className="card-text"),
+                        dcc.Input(id="svr_cv_number_of_folds", type="number", placeholder="input with range",min=1,max=100, step=1,value=5),html.Br(),html.Br(),
+
+                        html.B("cv_scoring "),html.I("par défaut = 'MSE'"),html.Br(),
+                        html.P("Selectionnez la méthode de scoring pour la validation croisée."),
+                        dcc.Dropdown(
+                            id='svr_cv_scoring',
+                            options=[
+                                {'label': "MSE", 'value': "MSE"},
+                                {'label': "RMSE", 'value': "RMSE"},
+                                {'label': "MAE", 'value': "MAE"},
+                            ],
+                            value = 'MSE'
+                        ),html.Br(),html.Br(),
+
+                        dbc.Button("Valider K-Fold Cross-Validation",id='svr_button_CrossValidation', color="success", n_clicks=0),
                     ],className='col-6'
                 ),
                 # Div des résultats sur la droite 
@@ -211,17 +223,16 @@ regression_svr = dbc.Card(
                             children=[html.Div(id="res_svr_FitPredict")], 
                             type="default"
                         ),html.Hr(),
-                        html.Div(id="res_KNeighborsRegressor_CrossValidation")
+
+                        dcc.Loading(
+                            children = [html.Div(id="res_svr_CrossValidation")],
+                            type = "default"
+                        )
                     ],
                     className='col-6'
                 )
             ],className="row"
         ),
-            
-            #dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
-            html.Br(),html.Br(),
-            #html.Div(id='res_svr_FitPredict'),
-            html.Div(id='test')
-        ],
+    ],
     body=True
 )
