@@ -122,8 +122,8 @@ features_selection = dbc.Row(
 classification_tabs = dbc.Tabs(
     id="classification_tab",
     children= [
-        dbc.Tab(classification_log,label="Régression logistique",tab_id ='log',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
-        dbc.Tab(classification_decision_tree,label="Arbre de décision",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(classification_log,label="Logistic Regression",tab_id ='log',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(classification_decision_tree,label="Decision Tree",tab_id='decision_tree',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
         dbc.Tab(classification_KNeighborsClassifier,label="KNeighborsClassifier", tab_id='KNeighborsClassifier',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
     ]
 )
@@ -133,7 +133,7 @@ classification_tabs = dbc.Tabs(
 regression_tabs = dbc.Tabs(
     id='regression_tabs',
     children = [
-        dbc.Tab(Regession_regression_lineaire,label="Régression linéaire",tab_id='reg_lin',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
+        dbc.Tab(Regession_regression_lineaire,label="Linear Regression",tab_id='reg_lin',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
         dbc.Tab(regression_svr,label="SVR",tab_id ='svr',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'}),
         dbc.Tab(regression_KNeighborsRegressor,label="KNeighborsRegressor", tab_id='KNeighborsRegressor',tab_style={'background-color':'#E4F2F2','border-color':'white'},label_style={'color':'black'})
     ]

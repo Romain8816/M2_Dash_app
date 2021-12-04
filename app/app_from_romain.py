@@ -307,6 +307,8 @@ svr_callbacks.CrossValidation(app)
 # (Classification) Régression logistique
 log_callbacks.Gridsearch(app)
 log_callbacks.FitPredict(app)
+log_callbacks.CrossValidation(app)
+
 
 ########################################################################################################
 # (Régression) KNN

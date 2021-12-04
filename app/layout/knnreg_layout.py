@@ -11,7 +11,8 @@ import dash_bootstrap_components as dbc
 regression_KNeighborsRegressor = dbc.Card(
     children=[
 
-        html.H2(html.B(html.P("KNeighbors Regressor", className="card-text"))),html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),html.Br(),
+        html.H2(html.B(html.P("KNeighbors Regressor", className="card-text"))),
+        html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
 
         html.Div(
             [
@@ -26,7 +27,7 @@ regression_KNeighborsRegressor = dbc.Card(
                         dbc.Col(
                             [
                             dcc.Slider(id='KNeighborsRegressor_test_size',min=0.1,max=0.5,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}),
-                            ],width=1
+                            ],width=2
                         ),
                         dbc.Col(
                            width=2
@@ -176,7 +177,8 @@ regression_KNeighborsRegressor = dbc.Card(
                 ),html.Br(),
 
                 dbc.Button("Valider Fit & Predict", color="danger",id='KNeighborsRegressor_button_FitPredict',n_clicks=0),
-                dcc.Loading(id="KNeighborsRegressor-ls-loading-3", children=[html.Div(id="KNeighborsRegressor-ls-loading-output-3")], type="default"),html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
+                dcc.Loading(id="KNeighborsRegressor-ls-loading-3", children=[html.Div(id="KNeighborsRegressor-ls-loading-output-3")], type="default"),html.Br(),
+                html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
                 html.H4(html.B("Validation croisée :")),html.Br(),html.Br(),
                 html.B("cv_number_of_folds "),html.I("par défaut=5"),html.Br(),html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée.", className="card-text"),
                 dcc.Input(id="KNeighborsRegressor_cv_number_of_folds", type="number", placeholder="input with range",min=1,max=100, step=1,value=5),html.Br(),html.Br(),

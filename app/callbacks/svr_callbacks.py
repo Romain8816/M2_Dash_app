@@ -131,6 +131,7 @@ def FitPredict(app):
         State(component_id='target_selection',component_property='value'),
         State(component_id='features_selection',component_property='value'),
         State(component_id='svr_test_size',component_property='value'),
+        State(component_id='svr_shuffle',component_property='value'),
         State(component_id='svr_random_state',component_property='value'),
         State(component_id='svr_centrer_reduire',component_property='value'),
         State(component_id='svr_kernel_selection',component_property='value'),          # Noyau
@@ -138,7 +139,7 @@ def FitPredict(app):
         State(component_id='svr_epsilon',component_property='value'),
         State('svr_degre','value'))
 
-    def fit_predict_svr (n_clicks,file,target,features,test_size,random_state,centrer_reduire,kernel,regularisation,epsilon,degre):
+    def fit_predict_svr (n_clicks,file,target,features,test_size,shuffle,random_state,centrer_reduire,kernel,regularisation,epsilon,degre):
         if (n_clicks == 0):
             PreventUpdate
         else:
@@ -148,7 +149,7 @@ def FitPredict(app):
             X= df[features]
             y= df[target]
 
-            X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state=random_state)
+            X_train,X_test,y_train,y_test = split_train_test(X,y,test_size=test_size,random_state=random_state,shuffle=shuffle)
 
             params = {
                 "kernel" : kernel,

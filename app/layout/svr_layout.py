@@ -30,43 +30,80 @@ regression_svr = dbc.Card(
 
         html.Div(
             [
-                 html.H4(html.B("Paramètres généraux")),html.Br(),
-                 dbc.Row(
-                     [
-                         dbc.Col(
-                            dbc.Label("Taille de l'échantillon de test", html_for="svr_train_size",style={'font-weight': 'bold'}),
+                    html.H4(html.B("Paramètres généraux")),html.Br(),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                            [
+                            dbc.Label("Taille de l'échantillon test", html_for="svr_test_size",style={'font-weight': 'bold'}),
+                                ],width=3
+                        ),
+                        dbc.Col(
+                            [
+                            dcc.Slider(id='svr_test_size',min=0.1,max=0.5,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}),
+                            ],width=2
+                        ),
+                        dbc.Col(
                             width=2
                         ),
                         dbc.Col(
-                            dcc.Slider(id='svr_test_size',min=0.1,max=0.5,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}),
-                            width=2
+                            [
+                            html.B("Random state "),html.I("par défaut=42"),html.P(" Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
+                            ],width=3
+                        ),
+                        dbc.Col(
+                            [
+                            dcc.Input(id="svr_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),
+                            ],width=1
                         )
                     ]
                 ),
-
-                html.B("Random state "),html.I("par défaut=42"),html.Br(),
-                html.P("Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
-                dcc.Input(id="svr_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),                
                 dbc.Row(
                     [
                         dbc.Col(
                             [
                                 dbc.Label("Centrer réduire",  html_for="svr_centrer_reduire",style={'font-weight': 'bold'}),
-                            ], width=1
+                            ], width=3
                         ),
                         dbc.Col(
+                            [
                             dbc.Checklist(
                                 id="svr_centrer_reduire",
                                 options=[{"value":"yes"}]
                             )
+                            ],width=1
                         )
                     ]
                 ),
-                                     
+                html.Br(),
+                dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                html.B("shuffle "),html.I("par défaut shuffle=True"),html.Br(),html.P("s'il faut ou non mélanger les données avant de les diviser.", className="card-text"),
+                                ], width=3
+                            ),
+                            dbc.Col(
+                            [
+                                dcc.Dropdown(
+                                    id='svr_shuffle',
+                                    options=[
+                                        {'label': 'True', 'value': 'True'},
+                                        {'label': 'False', 'value': 'False'},
+                                    ],
+                                    value = 'True'
+                                )
+                                ], width=1
+                                ),
+                            dbc.Col(
+                                width=2
+                                ),
+                            ]
+                            ),
+                html.Br(),
+                html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
             ]
         ),
-
-        html.Hr(),
 
         html.Div(
             [
@@ -76,7 +113,7 @@ regression_svr = dbc.Card(
                     [
                         html.H4(html.B("Optimisation des hyperparamètres :")),html.Br(),
 
-                        html.B("GridSearchCV_number_of_folds "),html.I("par défaut=10"),html.Br(),
+                        html.B("GridSearchCV_number_of_folds "),html.I("par défaut=5"),html.Br(),
 
                         html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée pour l'optimisation des hyperparamètres.", className="card-text"),
                         dcc.Input(id="svr_gridCV_k_folds", type="number", placeholder="input with range",min=1,max=100, step=1,value=5),html.Br(),html.Br(),
@@ -202,17 +239,17 @@ regression_svr = dbc.Card(
                         dcc.Loading(
                             children=[html.Div(id="res_svr_GridSearchCV")], 
                             type="default"
-                        ),html.Hr(),
+                        ),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
                         
                         dcc.Loading(
                             children=[html.Div(id="res_svr_FitPredict")], 
                             type="default"
-                        ),html.Hr(),
+                        ),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
 
                         dcc.Loading(
                             children = [html.Div(id="res_svr_CrossValidation")],
                             type = "default"
-                        )
+                        ),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"})
                     ],
                     className='col-6'
                 )

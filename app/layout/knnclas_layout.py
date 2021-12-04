@@ -11,7 +11,8 @@ import dash_bootstrap_components as dbc
 classification_KNeighborsClassifier = dbc.Card(
     children=[
 
-            html.H2(html.B(html.P("KNeighbors Classifier", className="card-text"))),html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
+            html.H2(html.B(html.P("KNeighbors Classifier", className="card-text"))),
+            html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
 
             html.Div(
                 [
@@ -26,7 +27,7 @@ classification_KNeighborsClassifier = dbc.Card(
                             dbc.Col(
                                 [
                                 dcc.Slider(id='KNeighborsClassifier_test_size',min=0.1,max=0.5,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}),
-                                ],width=1
+                                ],width=2
                             ),
                             dbc.Col(
                                width=2

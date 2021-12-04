@@ -212,7 +212,8 @@ def cross_val(clf,X,Y,cv,scoring):
 # classes de la variable à prédire
 ######################################
 def cross_validation(clf,X,Y,cv,scoring):
-    if str(clf).startswith("DecisionTreeClassifier"):
+
+    if clf.__class__.__name__ == "DecisionTreeClassifier" or clf.__class__.__name__ == "LogisticRegression" or clf.__class__.__name__ == "KNeighborsClassifier":
         if scoring not in ["f1_binary","recall_binary","precision_binary","recall_micro","recall_macro","recall_weighted","precision_micro","precision_macro","precision_weighted"]:
             cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=scoring)
         else:
@@ -247,47 +248,14 @@ def cross_validation(clf,X,Y,cv,scoring):
             if scoring == "precision_weighted":
                 cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(precision_score,average="weighted"))
         return cross_val
-    if str(clf).startswith("KNeighborsClassifier"):
-        if scoring not in ["f1_binary","recall_binary","precision_binary","recall_micro","recall_macro","recall_weighted","precision_micro","precision_macro","precision_weighted"]:
-            cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=scoring)
-        else:
-            if scoring == "f1_binary":
-                if len(set(list(Y))) > 2:
-                    cross_val = "le nombre de classes n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
-                    return cross_val
-                else:
-                    cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(f1_score,average="binary", pos_label = sorted(list(set(list(Y))))[0]))
-            if scoring == "recall_binary":
-                if len(set(list(Y))) > 2:
-                    cross_val = "le nombre de classes n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
-                    return cross_val
-                else:
-                    cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(recall_score,average="binary", pos_label = sorted(list(set(list(Y))))[0]))
-            if scoring == "recall_micro":
-                cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(recall_score,average="micro"))
-            if scoring == "recall_macro":
-                cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(recall_score,average="macro"))
-            if scoring == "recall_weighted":
-                cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(recall_score,average="weighted"))
-            if scoring == "precision_binary":
-                if len(set(list(Y))) > 2:
-                    cross_val = "le nombre de classes n'est pas binaire, veuillez selectionner une métrique dont l'average est différent de 'binary'"
-                    return cross_val
-                else:
-                    cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(precision_score,average="binary", pos_label = sorted(list(set(list(Y))))[0]))
-            if scoring == "precision_micro":
-                cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(precision_score,average="micro"))
-            if scoring == "precision_macro":
-                cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(precision_score,average="macro"))
-            if scoring == "precision_weighted":
-                cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=make_scorer(precision_score,average="weighted"))
-        return cross_val
+
     if str(clf).startswith("KNeighborsRegressor"):
         if scoring == "MAE":
             cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring="neg_mean_absolute_error")
         else:
             cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring="neg_mean_squared_error")
         return cross_val
+
     if str(clf).startswith("LinearRegression"):
         cross_val = cross_val_score(estimator=clf,X=X.values,y=Y.values,cv=cv,scoring=scoring)
         return cross_val

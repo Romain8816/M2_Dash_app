@@ -24,7 +24,7 @@ from sklearn.model_selection import cross_val_score, train_test_split
 
 classification_log = dbc.Card(          
     children=[
-        html.H2(html.B(html.P("Régression Logistique", className="card-text"))),
+        html.H2(html.B(html.P("Logistic Regression", className="card-text"))),
         html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
         html.Div(
                 [
@@ -39,7 +39,7 @@ classification_log = dbc.Card(
                             dbc.Col(
                                 [
                                 dcc.Slider(id='log_test_size',min=0.1,max=0.5,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}),
-                                ],width=1
+                                ],width=2
                             ),
                             dbc.Col(
                                width=2
@@ -120,9 +120,8 @@ classification_log = dbc.Card(
                 ]
             ),
 
-            html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
-
-        html.Hr(),        
+            html.Br(),
+            html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
 
         html.Div(
             [
@@ -131,7 +130,7 @@ classification_log = dbc.Card(
                     [
                         html.H4(html.B("Optimisation des hyperparamètres :")),html.Br(),
 
-                        html.B("GridSearchCV_number_of_folds "),html.I("par défaut=10"),html.Br(),
+                        html.B("GridSearchCV_number_of_folds "),html.I("par défaut=5"),html.Br(),
 
                         html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée pour l'optimisation des hyperparamètres.", className="card-text"),
                         dcc.Input(id="log_gridCV_k_folds", type="number", placeholder="input with range",min=1,max=100, step=1,value=5),html.Br(),html.Br(),
@@ -201,8 +200,8 @@ classification_log = dbc.Card(
                                 # l1 ratio
                                 dbc.Col(
                                     [
-                                        dbc.Label("l1 ratio", html_for="l1_ratio",style={'font-weight': 'bold'}),
-                                        dcc.Slider(id='l1_ratio',min=0,max=1,step=0.1,value=0,tooltip={"placement": "bottom", "always_visible": True}),
+                                        dbc.Label("l1 ratio", html_for="log_l1_ratio",style={'font-weight': 'bold'}),
+                                        dcc.Slider(id='log_l1_ratio',min=0,max=1,step=0.1,value=0,tooltip={"placement": "bottom", "always_visible": True}),
                                     ],
                                 )
                             ]
@@ -215,7 +214,7 @@ classification_log = dbc.Card(
                                 dbc.Col(
                                     [
                                         dbc.Label("Régularisation (C)", html_for="log_regularisation",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='log_regularisation',type='number',min=0,max=100,step=0.1,value=0.1,),
+                                        dbc.Input(id='log_regularisation',type='number',min=0,max=5,step=0.1,value=0.1,),
                                     ],
                                 ),
                             ],style={'margin-bottom': '1em'}
@@ -242,35 +241,73 @@ classification_log = dbc.Card(
                             ]
                         ),
                         html.Br(),
-                        dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
+                        dbc.Button("Valider fit & predict", color="danger",id='log_button',n_clicks=0),
+
+                        html.Br(),html.Hr(),
+
+
+                        # Validation Croisée
+
+                        html.H4(html.B("Validation croisée :")),html.Br(),
+
+                        html.B("cv_number_of_folds "),html.I("par défaut=5"),html.Br(),
+                        html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée.", className="card-text"),
+                        dcc.Input(id="log_cv_number_of_folds", type="number", placeholder="input with range",min=1,max=100, step=1,value=5),html.Br(),html.Br(),
+
+                        html.B("cv_scoring "),html.I("par défaut = 'f1_macro'"),html.Br(),
+                        html.P("Selectionnez la méthode de scoring pour la validation croisée."),
+                        dcc.Dropdown(
+                        id='log_cv_scoring',
+                        options=[
+                            {'label': "accuracy", 'value': "accuracy"},
+                            {'label': "balanced_accuracy", 'value': "balanced_accuracy"},
+                            {'label': "f1_binary", 'value': "f1_binary"},
+                            {'label': "f1_micro", 'value': "f1_micro"},
+                            {'label': "f1_macro", 'value': "f1_macro"},
+                            {'label': "f1_weighted", 'value': "f1_weighted"},
+                            {'label': "precision_binary", 'value': "precision_binary"},
+                            {'label': "precision_micro", 'value': "precision_micro"},
+                            {'label': "precision_macro", 'value': "precision_macro"},
+                            {'label': "precision_weighted", 'value': "precision_weighted"},
+                            {'label': "recall_binary", 'value': "recall_binary"},
+                            {'label': "recall_micro", 'value': "recall_micro"},
+                            {'label': "recall_macro", 'value': "recall_macro"},
+                            {'label': "recall_weighted", 'value': "recall_weighted"},
+                            {'label': "roc_auc_ovr", 'value': "roc_auc_ovr"},
+                            {'label': "roc_auc_ovo", 'value': "roc_auc_ovo"},
+                            {'label': "roc_auc_ovr_weighted", 'value':"roc_auc_ovr_weighted" },
+                            {'label': "roc_auc_ovo_weighted", 'value': "roc_auc_ovo_weighted"}
+                        ],
+                        value = 'f1_macro'
+                    ),html.Br(),
+
+                        dbc.Button("Valider K-Fold Cross-Validation",id='log_button_CrossValidation', color="success", n_clicks=0),                        
                     ],className='col-6'
                 ),
+
+                # Div des résultats sur la droite
                 html.Div(
                     [
-                        html.H3(html.B("Résultats :")),html.Hr(),
+                        html.H3(html.B("Résultats :")),
                         dcc.Loading(
                             children=[html.Div(id="res_log_GridSearchCV")], 
                             type="default"
-                        ),html.Hr(),
+                        ),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
 
                         dcc.Loading(
                             children=[html.Div(id="res_log_FitPredict")], 
                             type="default"
-                        ),html.Hr(),
-                        html.Div(id="res_KNeighborsRegressor_CrossValidation")
+                        ),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
+
+                        dcc.Loading(
+                            children=[html.Div(id="res_log_CrossValidation")], 
+                            type="default"
+                        ),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"})
                     ],
                     className='col-6'
                 )
             ],className="row"
         ),
-
-            html.Br(),html.Br(),
-            
-            html.Br(),html.Br(),
-            
-            #dbc.Button("Valider fit & predict", color="danger",id='smv_button',n_clicks=0),
-            html.Div(id='res_log'),
-            html.Div(id='test')
-        ],
+    ],
     body=True
 )

@@ -121,17 +121,16 @@ def FitPredict(app):
         State(component_id='log_shuffle',component_property='value'),
         State(component_id='log_stratify', component_property = 'value'),
         State(component_id='log_centrer_reduire',component_property='value'),
-        State(component_id='log_solver',component_property='value'),          # Noyau
-        State(component_id='log_regularisation',component_property='value'),  # C
+        State(component_id='log_solver',component_property='value'),          
+        State(component_id='log_regularisation',component_property='value'),
         State(component_id='log_penalty',component_property='value'),
-        State(component_id='log_penalty',component_property='value'),
-        State('log_degre','value'))
-
-    def fit_predict_log (n_clicks,file,target,features,test_size,random_state, shuffle, stratify, centrer_reduire, solver, regularisation, penalty, multi_class):
+        State(component_id='log_l1_ratio',component_property='value'))
+    def fit_predict_log (n_clicks,file,target,features,test_size,random_state, shuffle, stratify, centrer_reduire, solver, regularisation, penalty, l1_ratio):
 
         if (n_clicks == 0):
             PreventUpdate
         else:
+            t1 = time.time()
             df = get_pandas_dataframe(file)
 
             X= df[features]
@@ -140,31 +139,124 @@ def FitPredict(app):
             X_train,X_test,y_train,y_test = split_train_test(X,y,test_size=test_size,random_state=random_state,stratify=stratify,shuffle=shuffle)
 
             params = {
-                "multi_class": multi_class,
+                "l1_ratio": l1_ratio,
                 "penalty" : penalty,
                 "solver" : solver,
                 "C" : regularisation
             }
 
             model = build_model(centrer_reduire,LogisticRegression,**params)
-            
-            
-            rsquared = score['test_r2'].mean()
-            mse = score['test_neg_mean_squared_error'].mean()
-
             model.fit(X_train,y_train)
+            
             y_pred = model.predict(X_test)
 
-            fig = px.imshow(df.corr())
+            labels = np.unique(y_test)
 
 
-            return [
-                        html.Div(
-                            [
-                                dbc.Label("Validation score"),
-                                html.P('R² : '+str(rsquared)),
-                                html.P('MSE : '+str(mse))
-                            ]
-                        ),
-                        dcc.Graph(figure=fig)
+            # Matrice de confusion 
+            df_cm = pd.DataFrame(confusion_matrix(y_test, y_pred, labels = labels),columns=labels, index=labels) # matrice de confusion
+            df_cm.insert(0, target, df_cm.index)
+
+            pca = PCA(n_components=2)
+            temp = pca.fit_transform(X_test)
+            coord = pd.DataFrame(temp,columns=["PCA1","PCA2"]) # calcul des coordonnées pour l'ACP
+            y_pred = pd.DataFrame(y_pred,columns=["Log_reg_clusters"])
+            y_test = pd.DataFrame(y_test.values,columns=[target])
+
+            result = pd.concat([coord,y_pred,y_test],axis=1)
+
+            fig_knn = px.scatter(result, x="PCA1", y="PCA2", color="Log_reg_clusters", hover_data=['Log_reg_clusters'],
+                             title="PCA des classes prédites par le modèle".format(file.split("/")[-1]))
+
+            fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
+                             title="PCA du jeu de données test")
+            t2 = time.time() # stop
+
+            diff = t2 - t1
+
+            if len(set(list(y))) > 2: # si le nombre de classe de la variable explicative est > 2 (non binaire), on renvoie les métriques pertinentes
+                return html.Div(
+                    [
+                        "Matrice de confusion : ",html.Br(),
+                        dash_table.DataTable(
+                            id='log_cm',
+                            columns=[{"name": i, "id": i} for i in df_cm.columns],
+                            data=df_cm.to_dict('records'),
+                            style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],
+                        ),html.Br(),
+                        html.B("f1_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(f1_score(y_test, y_pred,average="macro"),
+                        f1_score(y_test, y_pred,average="micro"),
+                        f1_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
+                        html.B("recall_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(recall_score(y_test, y_pred,average="macro"),
+                        recall_score(y_test, y_pred,average="micro"),
+                        recall_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
+                        html.B("precision_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(precision_score(y_test, y_pred,average="macro"),
+                        precision_score(y_test, y_pred,average="micro"),
+                        precision_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
+                        html.B("accuracy_score ")," {:.4f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),
+                        "temps : {:.4f} sec".format(diff),html.Br(),dcc.Graph(id='res_log_FitPredict_knngraph', figure=fig_knn),
+                        dcc.Graph(id='res_log_FitPredict_inputgraph', figure=fig_input_data)
+                        ]
+                    )
+            else:
+                return html.Div(
+                    [
+                        "Matrice de confusion : ",html.Br(),
+                        dash_table.DataTable(
+                            id='log_cm',columns=[{"name": i, "id": i} for i in df_cm.columns],
+                            data=df_cm.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],),html.Br(),
+                            html.B("f1_score "),"binary {:.4f}".format(f1_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
+                            html.B("recall_score "),"binary {:.4f}".format(recall_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
+                            html.B("precision_score "),"binary {:.4f}".format(precision_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
+                            html.B("accuracy_score "),"{:.4f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff),html.Br(),
+                            dcc.Graph(id='res_log_FitPredict_knngraph', figure=fig_knn),
+                            dcc.Graph(id='res_log_FitPredict_inputgraph', figure=fig_input_data)
                     ]
+                )
+
+
+######################################
+# Callback en charge de faire la validation
+# croisée du modèle de regression KNN
+######################################
+def CrossValidation(app):
+    @app.callback(
+        Output(component_id='res_log_CrossValidation',component_property='children'),
+        Input(component_id='log_button_CrossValidation',component_property='n_clicks'),
+        State(component_id='file_selection',component_property='value'),
+        State(component_id='target_selection',component_property='value'),
+        State(component_id='features_selection',component_property='value'),
+        State(component_id='log_solver',component_property='value'),          
+        State(component_id='log_regularisation',component_property='value'),
+        State(component_id='log_penalty',component_property='value'),
+        State(component_id='log_l1_ratio',component_property='value'),
+        State(component_id='log_centrer_reduire',component_property='value'),
+        State(component_id='log_cv_number_of_folds',component_property='value'),
+        State(component_id='log_cv_scoring',component_property='value'))
+
+    def CV_score(n_clicks,file,target,features,solver, regularisation, penalty, l1_ratio, centrer_reduire,cv_number_of_folds,cv_scoring):
+        if (n_clicks == 0):
+            return "",""
+        else:
+            t1 = time.time() # start
+            df = get_pandas_dataframe(file) # récupération du jeu de données
+
+            X = df[features]
+            y = df[target]
+
+            params = {
+                "l1_ratio": l1_ratio,
+                "penalty" : penalty,
+                "solver" : solver,
+                "C" : regularisation
+            }
+
+            model = build_model(centrer_reduire,LogisticRegression,**params)
+            cv_res = cross_validation(clf=model['clf'],X=X,Y=y,cv=cv_number_of_folds,scoring=cv_scoring) # validation croisée
+            t2 = time.time()# stop
+            diff = t2 - t1 # calcul du temps écoulé pour la section 'validation croisée'
+
+            if isinstance(cv_res, str) == False:
+                return html.Div(["cross validation ",html.B("{} : ".format(cv_scoring)),html.B(["{:.4f}".format(abs(np.mean(cv_res)))],style={'color': 'green'}),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff)])
+            else:
+                return html.Div(["cross validation :",html.Br(),"{}".format(cv_res)])
