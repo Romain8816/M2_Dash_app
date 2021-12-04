@@ -34,11 +34,11 @@ regression_svr = dbc.Card(
                  dbc.Row(
                      [
                          dbc.Col(
-                            dbc.Label("Taille de l'échantillon d'entrainement", html_for="svr_train_size",style={'font-weight': 'bold'}),
+                            dbc.Label("Taille de l'échantillon de test", html_for="svr_train_size",style={'font-weight': 'bold'}),
                             width=2
                         ),
                         dbc.Col(
-                            dcc.Slider(id='svr_train_size',min=0.0,max=1.0,step=0.1,value=0.7,tooltip={"placement": "bottom", "always_visible": True}),
+                            dcc.Slider(id='svr_test_size',min=0.1,max=0.5,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}),
                             width=2
                         )
                     ]
@@ -110,21 +110,6 @@ regression_svr = dbc.Card(
 
                         # Fit predict
                         html.H4(html.B("Performance du modèle sur le jeu de test :")),html.Br(),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    dbc.Label("Taille de l'échantillon de test", html_for="svr_test_size",style={'font-weight': 'bold'}),
-                                    width=5
-                                ),
-                                dbc.Col(
-                                    dcc.Slider(
-                                        id='svr_test_size',min=0.0,max=1.0,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}
-                                    ),width=5
-                                )
-                            ]
-
-                        ),
-                        
                         html.Br(),html.Br(),
 
                         # Paramètres de l'algo

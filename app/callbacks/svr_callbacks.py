@@ -50,14 +50,14 @@ def Gridsearch(app):
         State(component_id='file_selection',component_property='value'),
         State(component_id='target_selection',component_property='value'),
         State(component_id='features_selection',component_property='value'),
-        State(component_id='svr_train_size',component_property='value'),
+        State(component_id='svr_test_size',component_property='value'),
         State(component_id='svr_random_state',component_property='value'),
         State(component_id='svr_centrer_reduire',component_property='value'),
         State(component_id='svr_gridCV_k_folds',component_property='value'),
         State(component_id='svr_GridSearchCV_njobs',component_property='value'),
         State(component_id='svr_gridCV_scoring',component_property='value'))
 
-    def GridSearchCV_score (n_clicks, file, target, features, train_size, random_state, centrer_reduire, k_fold, njobs, metric):
+    def GridSearchCV_score (n_clicks, file, target, features, test_size, random_state, centrer_reduire, k_fold, njobs, metric):
         if (n_clicks==0):
             PreventUpdate
         else:
@@ -69,7 +69,7 @@ def Gridsearch(app):
             X= df[features]
             y= df[target]
 
-            X_train,X_test,y_train,y_test = train_test_split(X,y,train_size=train_size,random_state = random_state)
+            X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=test_size,random_state = random_state)
 
             model = build_model(centrer_reduire,SVR)
 
@@ -171,8 +171,6 @@ def FitPredict(app):
                     more_uniq_col = col
                     k = len(X_test[col].unique())
             X_test = X_test.sort_values(by=more_uniq_col)
-
-            print(more_uniq_col)
 
             fig = go.Figure()
 
