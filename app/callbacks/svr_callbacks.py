@@ -109,6 +109,7 @@ def Gridsearch(app):
             diff = t2 - t1
             y_pred = grid.predict(X_test)
 
+
             return (
                 [
                     "GridSearchCV paramètres optimaux : ",html.Br(),html.Br(),
@@ -164,9 +165,63 @@ def FitPredict(app):
             t2 = time.time() # stop
             diff = t2 - t1 # calcul du temps écoulé pour la section 'performance du modèle sur le jeu test'
 
-            #score = cross_validate(model,X_train,y_train,cv=k_fold,scoring=('r2','neg_mean_squared_error'),return_train_score=True)
+            # mesh_size = .02
+            # margin = 0
+            # x_min, x_max = X.sepal_width.min() - margin, X.sepal_width.max() + margin
+            # y_min, y_max = X.sepal_length.min() - margin, X.sepal_length.max() + margin
+            # xrange = np.arange(x_min, x_max, mesh_size)
+            # yrange = np.arange(y_min, y_max, mesh_size)
+            # xx, yy = np.meshgrid(xrange, yrange)
 
-            fig = px.imshow(df.corr())
+
+    #         x_range = np.linspace(X_test.min(), X_test.max(), 100)
+    #         y_range = model.predict(x_range.reshape(-1, 1))
+
+    #         fig = go.Figure([
+    #             go.Scatter(x=X_train.squeeze(), y=y_train, 
+    #                name='train', mode='markers'),
+    #             go.Scatter(x=X_test.squeeze(), y=y_test, 
+    #                name='test', mode='markers'),
+    #             go.Scatter(x=x_range, y=y_range, 
+    #                name='prediction')
+    # ])
+
+            #fig = px.line(x=X_test['sepal_width'], y=y_pred, labels={'x':'t', 'y':'cos(t)'})
+            k = 0
+            more_uniq_col = ""
+            for col in X_test: # récupérer la variable explicative avec le plus de valeurs uniques pour la représentation graphique
+                if len(X_test[col].unique()) > k:
+                    more_uniq_col = col
+                    k = len(X_test[col].unique())
+            X_test = X_test.sort_values(by=more_uniq_col)
+
+            print(more_uniq_col)
+
+            fig = go.Figure()
+
+            fig.add_trace(
+                go.Scatter(x=X_train[more_uniq_col],y=y_train,mode='markers',name='train',marker={'size': 8, "opacity":0.8})
+            )
+
+            fig.add_trace(
+                go.Scatter(x=X_test[more_uniq_col],y=y_test,mode='markers',name='test',marker={'size': 8, "opacity":0.5})
+            )
+            
+            fig.add_trace(
+                go.Scatter(x=X_test[more_uniq_col],y=model.fit(pd.DataFrame(X_train[more_uniq_col]),y_train).predict(pd.DataFrame(X_test[more_uniq_col])),mode='lines',name='prediction',marker={'size': 8, "opacity":0.5})
+            )
+            fig.update_layout(
+                title="Comparaison des points prédits avec les points tests",
+                xaxis_title="{}".format(more_uniq_col),
+                yaxis_title="{}".format(target),
+                legend_title="",
+                font=dict(
+                    family="Courier New, monospace",
+                    size=12,
+                    color="black"
+            ))
+
+            #fig = px.imshow(df.corr())
             
             #fig = px.scatter_matrix(df,dimensions=features)
 
