@@ -103,6 +103,7 @@ def get_best_params(X,Y,clf,params,cv,scoring,njobs):
             grid_search = GridSearchCV(KNeighborsRegressor(), params, scoring="neg_mean_squared_error", cv=cv, n_jobs=njobs)
         grid_search = grid_search.fit(X.values,Y.values)
         return grid_search
+
     if clf == "Arbre de decision" :
         t1 = time.time()
         grid_search = GridSearchCV(DecisionTreeClassifier(), params, scoring=scoring, cv=cv, n_jobs=njobs)
@@ -110,6 +111,7 @@ def get_best_params(X,Y,clf,params,cv,scoring,njobs):
         t2 = time.time()
         diff = t2 - t1
         return [grid_search,diff]
+
     if clf == "Regression lineaire" :
         t1 = time.time()
         grid_search = GridSearchCV(LinearRegression(), params, scoring=scoring, cv=cv, n_jobs=njobs)
@@ -131,8 +133,6 @@ def build_smv(kernel,regularisation,epsilon):
 
     model = make_pipeline(preprocessor,SVR(kernel=kernel,C=regularisation,epsilon=epsilon))
 
-    #print(sorted(model.get_params().keys()))
-    #print(sorted(model.metrics.SCORERS.keys()))
     return model
 
 def build_model(centrer_reduire,clf,**params):

@@ -24,46 +24,104 @@ from sklearn.model_selection import cross_val_score, train_test_split
 
 classification_log = dbc.Card(          
     children=[
-        html.H2(html.B(html.P("LogisticRegression", className="card-text"))),
+        html.H2(html.B(html.P("Régression Logistique", className="card-text"))),
         html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
-
         html.Div(
-            [
-                 html.H4(html.B("Paramètres généraux")),html.Br(),
-                 dbc.Row(
-                     [
-                         dbc.Col(
-                            dbc.Label("Taille de l'échantillon d'entrainement", html_for="log_train_size",style={'font-weight': 'bold'}),
-                            width=2
-                        ),
-                        dbc.Col(
-                            dcc.Slider(id='log_train_size',min=0.0,max=1.0,step=0.1,value=0.7,tooltip={"placement": "bottom", "always_visible": True}),
-                            width=2
-                        )
-                    ]
-                ),
-
-                html.B("Random state "),html.I("par défaut=42"),html.Br(),
-                html.P("Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
-                dcc.Input(id="log_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),                
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [
-                                dbc.Label("Centrer réduire",  html_for="log_centrer_reduire",style={'font-weight': 'bold'}),
-                            ], width=1
-                        ),
-                        dbc.Col(
-                            dbc.Checklist(
-                                id="log_centrer_reduire",
-                                options=[{"value":"yes"}]
+                [
+                     html.H4(html.B("Paramètres généraux")),html.Br(),
+                     dbc.Row(
+                         [
+                             dbc.Col(
+                                [
+                                dbc.Label("Taille de l'échantillon test", html_for="log_test_size",style={'font-weight': 'bold'}),
+                                 ],width=3
+                            ),
+                            dbc.Col(
+                                [
+                                dcc.Slider(id='log_test_size',min=0.1,max=0.5,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}),
+                                ],width=1
+                            ),
+                            dbc.Col(
+                               width=2
+                           ),
+                            dbc.Col(
+                               [
+                               html.B("Random state "),html.I("par défaut=42"),html.P(" Contrôle le brassage appliqué aux données avant d'appliquer le fractionnement. Passer un int pour une sortie reproductible sur plusieurs appels de fonction.", className="card-text"),
+                               ],width=3
+                           ),
+                           dbc.Col(
+                              [
+                              dcc.Input(id="log_random_state", type="number", placeholder="input with range",min=1,max=42, step=1,value=42),html.Br(),html.Br(),
+                              ],width=1
+                           )
+                        ]
+                    ),
+                   dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Label("Centrer réduire",  html_for="log_centrer_reduire",style={'font-weight': 'bold'}),
+                                ], width=3
+                            ),
+                            dbc.Col(
+                                [
+                                dbc.Checklist(
+                                    id="log_centrer_reduire",
+                                    options=[{"value":"yes"}]
+                                )
+                                ],width=1
                             )
-                        )
-                    ]
-                ),
-                                     
-            ]
-        ),
+                        ]
+                    ),
+                    html.Br(),
+                    dbc.Row(
+                         [
+                             dbc.Col(
+                                 [
+                                    html.B("shuffle "),html.I("par défaut shuffle=True"),html.Br(),html.P("s'il faut ou non mélanger les données avant de les diviser.", className="card-text"),
+                                 ], width=3
+                             ),
+                             dbc.Col(
+                                [
+                                    dcc.Dropdown(
+                                        id='log_shuffle',
+                                        options=[
+                                            {'label': 'True', 'value': 'True'},
+                                            {'label': 'False', 'value': 'False'},
+                                        ],
+                                        value = 'True'
+                                    )
+                                    ], width=1
+                                 ),
+                              dbc.Col(
+                                   width=2
+                                  ),
+                                dbc.Col(
+                                    [
+                                       html.B("stratify "),html.I("par defaut stratify=False"),html.Br(),
+                                       html.P("Si ce n'est pas False, les données sont divisées de manière stratifiée en utilisant les étiquettes de la classe à prédire", className="card-text"),
+                                    ], width=3
+                                ),
+                                dbc.Col(
+                                   [
+                                       dcc.Dropdown(
+                                           id='log_stratify',
+                                           options=[
+                                               {'label': 'True', 'value': 'True'},
+                                               {'label': 'False', 'value': 'False'},
+                                           ],
+                                           value = 'False'
+                                       )
+                                       ], width=1
+                                    )
+                              ]
+                             ),
+                    html.Br(),
+                ]
+            ),
+
+            html.Br(),html.Hr(style={'borderWidth': "0.5vh", "borderColor": "grey"}),
+
         html.Hr(),        
 
         html.Div(
@@ -78,15 +136,32 @@ classification_log = dbc.Card(
                         html.P("Selectionner le nombre de fois que vous souhaitez réaliser la validation croisée pour l'optimisation des hyperparamètres.", className="card-text"),
                         dcc.Input(id="log_gridCV_k_folds", type="number", placeholder="input with range",min=1,max=100, step=1,value=5),html.Br(),html.Br(),
                     
-                        html.B("GridSearchCV_scoring "),html.I("par défaut = 'MSE'"),html.Br(),
+                        html.B("GridSearchCV_scoring "),html.I("par défaut = 'f1_macro'"),html.Br(),
                         html.P("Selectionner la méthode de scoring pour l'optimisation des hyperparamètres."),
 
                         dcc.Dropdown(
                             id='log_gridCV_scoring',
                             options=[
-                                {'label': "Accuracy", 'value': "accuracy"}
+                                {'label': "accuracy", 'value': "accuracy"},
+                                {'label': "balanced_accuracy", 'value': "balanced_accuracy"},
+                                {'label': "f1_binary", 'value': "f1_binary"},
+                                {'label': "f1_micro", 'value': "f1_micro"},
+                                {'label': "f1_macro", 'value': "f1_macro"},
+                                {'label': "f1_weighted", 'value': "f1_weighted"},
+                                {'label': "precision_binary", 'value': "precision_binary"},
+                                {'label': "precision_micro", 'value': "precision_micro"},
+                                {'label': "precision_macro", 'value': "precision_macro"},
+                                {'label': "precision_weighted", 'value': "precision_weighted"},
+                                {'label': "recall_binary", 'value': "recall_binary"},
+                                {'label': "recall_micro", 'value': "recall_micro"},
+                                {'label': "recall_macro", 'value': "recall_macro"},
+                                {'label': "recall_weighted", 'value': "recall_weighted"},
+                                {'label': "roc_auc_ovr", 'value': "roc_auc_ovr"},
+                                {'label': "roc_auc_ovo", 'value': "roc_auc_ovo"},
+                                {'label': "roc_auc_ovr_weighted", 'value':"roc_auc_ovr_weighted" },
+                                {'label': "roc_auc_ovo_weighted", 'value': "roc_auc_ovo_weighted"}
                             ],
-                            value = 'accuracy'
+                            value = 'f1_macro'
                         ),html.Br(),html.Br(),
 
                         html.B("GridSearchCV_njobs "),html.I("par défaut=-1"),html.Br(),
@@ -102,65 +177,32 @@ classification_log = dbc.Card(
                         html.Br(),html.Hr(),
                         
                         html.H4(html.B("Paramètrage du modèle et Fit & Predict :")),html.Br(),
-
-                
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    dbc.Label("Taille de l'échantillon de test", html_for="log_test_size",style={'font-weight': 'bold'}),
-                                    width=5
-                                ),
-                                dbc.Col(
-                                    dcc.Slider(
-                                        id='log_test_size',min=0.0,max=1.0,step=0.1,value=0.3,tooltip={"placement": "bottom", "always_visible": True}
-                                    ),width=5
-                                )
-                            ]
-
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        dbc.Label("Random seed", html_for="log_random_state",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='log_random_state',type='number'),
-                                    ]
-                                ),
-                                dbc.Col(
-                                    [
-                                        dbc.Label("K-folds ", html_for="log_k_fold",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='log_k_fold',value=5,type='number'),
-                                    ]
-                                )
-                            ],
-                        ),
-                        html.Br(),html.Br(),
-
+                        
                         # Paramètres de l'algo
                         dbc.Row(
                             [
-                                # Type du noyau
+                                # Pénalité
                                 dbc.Col(
                                     [
-                                        dbc.Label("Type de noyau (kernel)", html_for="log_kernel_selection",style={'font-weight': 'bold'}),
+                                        dbc.Label("Pénalité", html_for="log_penalty",style={'font-weight': 'bold'}),
                                         dcc.Dropdown(
-                                            id='log_kernel_selection',
+                                            id='log_penalty',
                                             options=[
-                                                {'label': 'linéaire', 'value': 'linear'},
-                                                {'label': 'polynomial', 'value': 'poly'},
-                                                {'label': 'RBF', 'value': 'rbf'},
-                                                {'label': 'Sigmoïde', 'value': 'sigmoid'},
+                                                {'label': 'aucune', 'value': 'none'},
+                                                {'label': 'l1', 'value': 'l1'},
+                                                {'label': 'l2', 'value': 'l2'},
+                                                {'label': 'elasticnet', 'value': 'elasticnet'},
                                             ],
-                                            value = 'rbf'
+                                            value = 'none'
                                         ),
                                     ],
                                 ),
 
-                                # Degré pour noyau polynomial
+                                # l1 ratio
                                 dbc.Col(
                                     [
-                                        dbc.Label("Degré (pour noyau polynomial)", html_for="log_kernel_selection",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='log_degre',type='number',min=0,max=4,step=1,value=0,),
+                                        dbc.Label("l1 ratio", html_for="l1_ratio",style={'font-weight': 'bold'}),
+                                        dcc.Slider(id='l1_ratio',min=0,max=1,step=0.1,value=0,tooltip={"placement": "bottom", "always_visible": True}),
                                     ],
                                 )
                             ]
@@ -172,8 +214,8 @@ classification_log = dbc.Card(
                                 # Paramètre de régularisation
                                 dbc.Col(
                                     [
-                                        dbc.Label("Régularisation (C)", html_for="log_regularisation_selection",style={'font-weight': 'bold'}),
-                                        dbc.Input(id='log_regularisation_selection',type='number',min=0,max=100,step=0.1,value=0.1,),
+                                        dbc.Label("Régularisation (C)", html_for="log_regularisation",style={'font-weight': 'bold'}),
+                                        dbc.Input(id='log_regularisation',type='number',min=0,max=100,step=0.1,value=0.1,),
                                     ],
                                 ),
                             ],style={'margin-bottom': '1em'}
@@ -181,11 +223,20 @@ classification_log = dbc.Card(
 
                         dbc.Row(
                             [
-                                # Epsilon 
+                                # Solver 
                                 dbc.Col(
                                     [
-                                        dbc.Label("Epsilon (ε)",html_for='log_epsilon',style={'font-weight': 'bold'}),
-                                        dbc.Input(id='log_epsilon',type='number',value=0.1,min=0,max=100,step=0.1),
+                                        dbc.Label("Solver",html_for='log_solver',style={'font-weight': 'bold'}),
+                                        dcc.Dropdown(
+                                            id='log_solver',
+                                            options=[
+                                                {'label': 'lbfgs', 'value': 'lbfgs'},
+                                                {'label': 'newton-cg', 'value': 'newton-cg'},
+                                                {'label': 'liblinear', 'value': 'liblinear'},
+                                                {'label': 'sag', 'value': 'saga'},
+                                            ],
+                                            value = 'lbfgs'
+                                        )
                                     ],
                                 )
                             ]
