@@ -1,7 +1,7 @@
 from dash.dependencies import Input,Output,State
-from fonctions.various_functions import get_pandas_dataframe, binariser, centrer_reduire_norm, split_train_test, pre_process
+from fonctions.various_functions import get_pandas_dataframe, split_train_test, pre_process
 from fonctions.algo_functions import build_KNeighborsClassifier, cross_validation, get_best_params
-from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score
+from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score
 from sklearn.decomposition import PCA
 from dash import html, dash_table, dcc, html
 import plotly.express as px

@@ -1,48 +1,13 @@
-import dash
-from dash import dcc
-from dash import html
-import dash_bootstrap_components as dbc
-from dash_bootstrap_components._components.Row import Row
-from pkg_resources import NullProvider
-import plotly.express as px
-import pandas as pd
-from dash.dependencies import Input,Output,State
-import os
-import pandas as pd
-import json
-from dash.exceptions import PreventUpdate
 from sklearn.tree import DecisionTreeClassifier
-from dash import dash_table
 import numpy as np
-import base64
-import io
-import cchardet as chardet
-from detect_delimiter import detect
-from sklearn.cluster import KMeans
-import dash_daq as daq
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV
-from sklearn import svm
-from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn import metrics
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
-from sklearn.compose import make_column_transformer, make_column_selector
-from sklearn.pipeline import make_pipeline
 from sklearn.svm import SVR
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-from sklearn.metrics import make_scorer, recall_score, precision_score, f1_score, mean_squared_error, r2_score
+from sklearn.metrics import make_scorer, recall_score, precision_score, f1_score
 import time
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV
-from sklearn import svm
-
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import cross_val_score, train_test_split,GridSearchCV
-
+from sklearn.model_selection import cross_val_score, GridSearchCV
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.impute import SimpleImputer
 from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.pipeline import make_pipeline, Pipeline
 

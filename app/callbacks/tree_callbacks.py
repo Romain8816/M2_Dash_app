@@ -5,37 +5,18 @@ Created on Wed Dec  1 20:06:13 2021
 """
 # Importation
 import dash
-from tkinter.constants import NONE
 from dash import dcc
 from dash import html
 from dash.development.base_component import Component
-import dash_bootstrap_components as dbc
-from dash_bootstrap_components._components.Collapse import Collapse
-from dash_bootstrap_components._components.Row import Row
-from numpy.core.numeric import cross
-from numpy.random.mtrand import random_integers
 import plotly.express as px
-import pandas as pd
 from dash.dependencies import Input,Output,State
-import os
 import pandas as pd
-import json
 from dash.exceptions import PreventUpdate
 from dash import dash_table
 import numpy as np
-import plotly.graph_objects as go
 import time
-from sklearn.pipeline import make_pipeline, Pipeline
-from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.decomposition import PCA
-from sklearn.model_selection import cross_val_score, train_test_split, cross_validate
-from sklearn import metrics
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.compose import make_column_transformer, make_column_selector
-from sklearn.model_selection import validation_curve, GridSearchCV
-
-from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score, mean_absolute_error
+from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score
 from sklearn.tree import DecisionTreeClassifier,plot_tree
 import matplotlib.pyplot as plt
 from scipy import stats
@@ -255,9 +236,7 @@ def CrossValidation(app):
             Y= df[target]
 
             tree = build_tree(criterion, splitter, max_depth, min_samples_split,min_samples_leaf,max_leaf_nodes)
-            #clf = DecisionTreeClassifier()
             res = cross_validation(clf=tree,X=X,Y=Y,cv=cv_number_of_folds,scoring=cv_scoring)
-            #print(res[0])
             return html.Div([
                 "cross validation ",html.B("{} : ".format(cv_scoring)),
                 html.B(["{}".format(np.mean(res[0]))],style={'color': 'green'}),html.Br(),

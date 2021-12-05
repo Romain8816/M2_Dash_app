@@ -1,44 +1,18 @@
-from tkinter.constants import NONE
 from dash import dcc
 from dash import html
-from dash.development.base_component import Component
-import dash_bootstrap_components as dbc
-from dash_bootstrap_components._components.Collapse import Collapse
-from dash_bootstrap_components._components.Row import Row
-from numpy.core.numeric import cross
-from numpy.random.mtrand import RandomState, random_integers
-import plotly.express as px
-import pandas as pd
 from dash.dependencies import Input,Output,State
-import os
 import pandas as pd
-import json
 from dash.exceptions import PreventUpdate
 from dash import dash_table
 import numpy as np
 import plotly.graph_objects as go
 import time
-from sklearn.pipeline import make_pipeline, Pipeline
-from sklearn.metrics.cluster import adjusted_rand_score
-from sklearn.decomposition import PCA
-from sklearn.model_selection import cross_val_score, train_test_split, cross_validate
-from sklearn import metrics
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.compose import make_column_transformer, make_column_selector
-from sklearn.model_selection import validation_curve, GridSearchCV
+from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVR
-
-from layout.layout import location_folder, dataset_selection, target_selection,features_selection
-from layout.layout import regression_tabs, classification_tabs
-
-from sklearn import metrics
-from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score, mean_absolute_error
-from math import sqrt
-from matplotlib import pyplot
-
-from fonctions.various_functions import get_pandas_dataframe, binariser, centrer_reduire_norm, split_train_test, pre_process
-from fonctions.algo_functions import build_smv, build_KNeighborsRegressor, cross_validation, get_best_params, build_model, cross_validation
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from fonctions.various_functions import get_pandas_dataframe, split_train_test
+from fonctions.algo_functions import build_model
 
 # (Régression) svr
 

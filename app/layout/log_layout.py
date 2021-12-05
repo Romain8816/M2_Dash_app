@@ -1,25 +1,7 @@
-import dash
 from dash import dcc
 from dash import html
 import dash_bootstrap_components as dbc
-from dash_bootstrap_components._components.Row import Row
-from numpy.core.fromnumeric import size
-import plotly.express as px
-import pandas as pd
-from dash.dependencies import Input,Output,State
-import os
-import pandas as pd
-import json
-from dash.exceptions import PreventUpdate
-from dash import dash_table
-import numpy as np
-import base64
-import io
-import cchardet as chardet
-from detect_delimiter import detect
-import dash_daq as daq
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import cross_val_score, train_test_split
+
 
 
 classification_log = dbc.Card(          

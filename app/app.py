@@ -1,81 +1,19 @@
-from tkinter.constants import NONE
 import dash
 from dash import dcc
-from dash import html, callback_context
-from dash.development.base_component import Component
+from dash import html
 import dash_bootstrap_components as dbc
-from dash_bootstrap_components._components.Collapse import Collapse
-from dash_bootstrap_components._components.Row import Row
-from numpy.core.numeric import cross
-from numpy.random.mtrand import random_integers
 import plotly.express as px
-import plotly.graph_objects as go
-import pandas as pd
 from dash.dependencies import Input,Output,State
 import os
-import pandas as pd
-import json
 from dash.exceptions import PreventUpdate
 from dash import dash_table
 import numpy as np
-import base64
-import io
-import plotly.graph_objects as go
-import time
-from detect_delimiter import detect
-import dash_daq as daq
-import cchardet as chardet
-from scipy.sparse.construct import rand, random
-from sklearn.pipeline import make_pipeline
-from sklearn.cluster import KMeans
-from sklearn.metrics.cluster import adjusted_rand_score
-from sklearn.decomposition import PCA
-from sklearn.model_selection import cross_val_score, train_test_split, cross_validate
-from sklearn import svm
-from sklearn import metrics
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.compose import make_column_transformer, make_column_selector
-from sklearn.model_selection import validation_curve
-
-from layout.layout import location_folder, dataset_selection, target_selection,features_selection
-from layout.layout import regression_tabs, classification_tabs
-from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
-from fonctions.algo_functions import build_smv
-from plotly import tools as tls
-import plotly.graph_objects as go
-
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics.cluster import adjusted_rand_score
-from sklearn.decomposition import PCA
 from statistics import *
-from layout.layout import location_folder, dataset_selection, target_selection,features_selection
-from layout.layout import regression_tabs, classification_tabs
 from fonctions.various_functions import *
 from fonctions.algo_functions import *
-from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn import svm
-from sklearn import metrics
-from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score, mean_absolute_error
-from math import sqrt
-from matplotlib import pyplot
-
-from sklearn.tree import DecisionTreeClassifier,plot_tree
-import matplotlib.pyplot as plt
-from scipy import stats
-
 from layout.layout import location_folder, dataset_selection, target_selection, features_selection, regression_tabs, classification_tabs
-from fonctions.various_functions import allowed_files, get_pandas_dataframe, parse_contents
+from fonctions.various_functions import allowed_files, get_pandas_dataframe
 from fonctions.algo_functions import *
-from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn import svm
-from sklearn import metrics
-from sklearn.metrics import make_scorer, mean_squared_error, r2_score
-
-import time
-from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, f1_score, mean_squared_error, roc_curve, r2_score
-from math import log, sqrt
-from matplotlib import pyplot
 
 from callbacks import svr_callbacks, knnreg_callbacks, knnclas_callbacks, log_callbacks, tree_callbacks, lr_callbacks
 

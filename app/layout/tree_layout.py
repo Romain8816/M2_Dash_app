@@ -1,7 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import html
 from dash import dcc
-import dash_bootstrap_components as dbc
 
 ######################################
 # Le code ci-dessous définit l'affichage
