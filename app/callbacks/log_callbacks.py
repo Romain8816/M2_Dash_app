@@ -44,7 +44,7 @@ from sklearn.linear_model import LogisticRegression
 def Gridsearch(app):
     @app.callback(
         #Output(component_id='svr-ls-loading-output-1',component_property='children'),
-        Output(component_id='res_log_GridSearchCV',component_property ='children'),   # Affichage des meilleurs paramètres 
+        Output(component_id='res_log_GridSearchCV',component_property ='children'),   # Affichage des meilleurs paramètres
         Input(component_id='log_button_GridSearchCV',component_property ='n_clicks'), # Validation du Gridsearch
         State(component_id='file_selection',component_property ='value'),
         State(component_id='target_selection',component_property ='value'),
@@ -82,7 +82,7 @@ def Gridsearch(app):
                 'clf__C' : [i for i in np.arange(0.1,2,0.2)],
             }
 
-            
+
             grid = GridSearchCV(model,params,cv=k_fold,n_jobs=njobs,scoring=metric)
             grid.fit(X_train,y_train)
 
@@ -121,7 +121,7 @@ def FitPredict(app):
         State(component_id='log_shuffle',component_property='value'),
         State(component_id='log_stratify', component_property = 'value'),
         State(component_id='log_centrer_reduire',component_property='value'),
-        State(component_id='log_solver',component_property='value'),          
+        State(component_id='log_solver',component_property='value'),
         State(component_id='log_regularisation',component_property='value'),
         State(component_id='log_penalty',component_property='value'),
         State(component_id='log_l1_ratio',component_property='value'))
@@ -147,72 +147,112 @@ def FitPredict(app):
 
             model = build_model(centrer_reduire,LogisticRegression,**params)
             model.fit(X_train,y_train)
-            
+
             y_pred = model.predict(X_test)
 
             labels = np.unique(y_test)
 
 
-            # Matrice de confusion 
+            # Matrice de confusion
             df_cm = pd.DataFrame(confusion_matrix(y_test, y_pred, labels = labels),columns=labels, index=labels) # matrice de confusion
             df_cm.insert(0, target, df_cm.index)
-
-            pca = PCA(n_components=2)
-            temp = pca.fit_transform(X_test)
-            coord = pd.DataFrame(temp,columns=["PCA1","PCA2"]) # calcul des coordonnées pour l'ACP
-            y_pred = pd.DataFrame(y_pred,columns=["Log_reg_clusters"])
-            y_test = pd.DataFrame(y_test.values,columns=[target])
-
-            result = pd.concat([coord,y_pred,y_test],axis=1)
-
-            fig_knn = px.scatter(result, x="PCA1", y="PCA2", color="Log_reg_clusters", hover_data=['Log_reg_clusters'],
-                             title="PCA des classes prédites par le modèle".format(file.split("/")[-1]))
-
-            fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
-                             title="PCA du jeu de données test")
             t2 = time.time() # stop
 
             diff = t2 - t1
 
-            if len(set(list(y))) > 2: # si le nombre de classe de la variable explicative est > 2 (non binaire), on renvoie les métriques pertinentes
-                return html.Div(
-                    [
-                        "Matrice de confusion : ",html.Br(),
-                        dash_table.DataTable(
-                            id='log_cm',
-                            columns=[{"name": i, "id": i} for i in df_cm.columns],
-                            data=df_cm.to_dict('records'),
-                            style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],
-                        ),html.Br(),
-                        html.B("f1_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(f1_score(y_test, y_pred,average="macro"),
-                        f1_score(y_test, y_pred,average="micro"),
-                        f1_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
-                        html.B("recall_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(recall_score(y_test, y_pred,average="macro"),
-                        recall_score(y_test, y_pred,average="micro"),
-                        recall_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
-                        html.B("precision_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(precision_score(y_test, y_pred,average="macro"),
-                        precision_score(y_test, y_pred,average="micro"),
-                        precision_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
-                        html.B("accuracy_score ")," {:.4f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),
-                        "temps : {:.4f} sec".format(diff),html.Br(),dcc.Graph(id='res_log_FitPredict_knngraph', figure=fig_knn),
-                        dcc.Graph(id='res_log_FitPredict_inputgraph', figure=fig_input_data)
+            if len(features) > 1:
+                pca = PCA(n_components=2)
+                temp = pca.fit_transform(X_test)
+                coord = pd.DataFrame(temp,columns=["PCA1","PCA2"]) # calcul des coordonnées pour l'ACP
+                y_pred = pd.DataFrame(y_pred,columns=["Log_reg_clusters"])
+                y_test = pd.DataFrame(y_test.values,columns=[target])
+
+                result = pd.concat([coord,y_pred,y_test],axis=1)
+
+                fig_knn = px.scatter(result, x="PCA1", y="PCA2", color="Log_reg_clusters", hover_data=['Log_reg_clusters'],
+                                 title="PCA des classes prédites par le modèle".format(file.split("/")[-1]))
+
+                fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
+                                 title="PCA du jeu de données test")
+
+                if len(set(list(y))) > 2: # si le nombre de classe de la variable explicative est > 2 (non binaire), on renvoie les métriques pertinentes
+                    return html.Div(
+                        [
+                            "Matrice de confusion : ",html.Br(),
+                            dash_table.DataTable(
+                                id='log_cm',
+                                columns=[{"name": i, "id": i} for i in df_cm.columns],
+                                data=df_cm.to_dict('records'),
+                                style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],
+                            ),html.Br(),
+                            html.B("f1_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(f1_score(y_test, y_pred,average="macro"),
+                            f1_score(y_test, y_pred,average="micro"),
+                            f1_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
+                            html.B("recall_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(recall_score(y_test, y_pred,average="macro"),
+                            recall_score(y_test, y_pred,average="micro"),
+                            recall_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
+                            html.B("precision_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(precision_score(y_test, y_pred,average="macro"),
+                            precision_score(y_test, y_pred,average="micro"),
+                            precision_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
+                            html.B("accuracy_score ")," {:.4f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),
+                            "temps : {:.4f} sec".format(diff),html.Br(),dcc.Graph(id='res_log_FitPredict_knngraph', figure=fig_knn),
+                            dcc.Graph(id='res_log_FitPredict_inputgraph', figure=fig_input_data)
+                            ]
+                        )
+                else:
+                    return html.Div(
+                        [
+                            "Matrice de confusion : ",html.Br(),
+                            dash_table.DataTable(
+                                id='log_cm',columns=[{"name": i, "id": i} for i in df_cm.columns],
+                                data=df_cm.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],),html.Br(),
+                                html.B("f1_score "),"binary {:.4f}".format(f1_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
+                                html.B("recall_score "),"binary {:.4f}".format(recall_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
+                                html.B("precision_score "),"binary {:.4f}".format(precision_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
+                                html.B("accuracy_score "),"{:.4f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff),html.Br(),
+                                dcc.Graph(id='res_log_FitPredict_knngraph', figure=fig_knn),
+                                dcc.Graph(id='res_log_FitPredict_inputgraph', figure=fig_input_data)
                         ]
                     )
-            else:
-                return html.Div(
-                    [
-                        "Matrice de confusion : ",html.Br(),
-                        dash_table.DataTable(
-                            id='log_cm',columns=[{"name": i, "id": i} for i in df_cm.columns],
-                            data=df_cm.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],),html.Br(),
-                            html.B("f1_score "),"binary {:.4f}".format(f1_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
-                            html.B("recall_score "),"binary {:.4f}".format(recall_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
-                            html.B("precision_score "),"binary {:.4f}".format(precision_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
-                            html.B("accuracy_score "),"{:.4f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff),html.Br(),
-                            dcc.Graph(id='res_log_FitPredict_knngraph', figure=fig_knn),
-                            dcc.Graph(id='res_log_FitPredict_inputgraph', figure=fig_input_data)
-                    ]
-                )
+
+            if len(features) == 1:
+                if len(set(list(y))) > 2: # si le nombre de classe de la variable explicative est > 2 (non binaire), on renvoie les métriques pertinentes
+                    return html.Div(
+                        [
+                            "Matrice de confusion : ",html.Br(),
+                            dash_table.DataTable(
+                                id='log_cm',
+                                columns=[{"name": i, "id": i} for i in df_cm.columns],
+                                data=df_cm.to_dict('records'),
+                                style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],
+                            ),html.Br(),
+                            html.B("f1_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(f1_score(y_test, y_pred,average="macro"),
+                            f1_score(y_test, y_pred,average="micro"),
+                            f1_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
+                            html.B("recall_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(recall_score(y_test, y_pred,average="macro"),
+                            recall_score(y_test, y_pred,average="micro"),
+                            recall_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
+                            html.B("precision_score "),"macro {:.4f} , micro {:.4f}, weighted {:.4f}".format(precision_score(y_test, y_pred,average="macro"),
+                            precision_score(y_test, y_pred,average="micro"),
+                            precision_score(y_test, y_pred,average="weighted")),html.Br(),html.Br(),
+                            html.B("accuracy_score ")," {:.4f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),
+                            "temps : {:.4f} sec".format(diff),html.Br()
+                            ]
+                        )
+                else:
+                    return html.Div(
+                        [
+                            "Matrice de confusion : ",html.Br(),
+                            dash_table.DataTable(
+                                id='log_cm',columns=[{"name": i, "id": i} for i in df_cm.columns],
+                                data=df_cm.to_dict('records'),style_cell_conditional=[{'if': {'column_id': c},'textAlign': 'center'} for c in df_cm.columns],),html.Br(),
+                                html.B("f1_score "),"binary {:.4f}".format(f1_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
+                                html.B("recall_score "),"binary {:.4f}".format(recall_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
+                                html.B("precision_score "),"binary {:.4f}".format(precision_score(y_test, y_pred,average="binary",pos_label = sorted(list(set(list(y))))[0])),html.Br(),html.Br(),
+                                html.B("accuracy_score "),"{:.4f}".format(accuracy_score(y_test, y_pred)),html.Br(),html.Br(),"temps : {:.4f} sec".format(diff),html.Br()
+                        ]
+                    )
+
 
 
 ######################################
@@ -226,7 +266,7 @@ def CrossValidation(app):
         State(component_id='file_selection',component_property='value'),
         State(component_id='target_selection',component_property='value'),
         State(component_id='features_selection',component_property='value'),
-        State(component_id='log_solver',component_property='value'),          
+        State(component_id='log_solver',component_property='value'),
         State(component_id='log_regularisation',component_property='value'),
         State(component_id='log_penalty',component_property='value'),
         State(component_id='log_l1_ratio',component_property='value'),

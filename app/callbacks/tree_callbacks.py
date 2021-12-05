@@ -160,18 +160,6 @@ def FitPredict(app) :
             df_cm = pd.DataFrame(confusion_matrix(y_test, y_pred,labels=labels),columns=labels, index=labels)
             df_cm.insert(0, target, df_cm.index)
 
-            #affichage graphique des prédictions réalisé
-            pca = PCA(n_components=2)
-            temp = pca.fit_transform(X_test)
-            coord = pd.DataFrame(temp,columns=["PCA1","PCA2"])
-            Y_pred = pd.DataFrame(y_pred,columns=["tree_clusters"])
-            Y_test = pd.DataFrame(y_test.values,columns=[target])
-
-            result = pd.concat([coord,Y_pred,Y_test],axis=1)
-            fig_tree = px.scatter(result, x="PCA1", y="PCA2", color="tree_clusters", hover_data=['tree_clusters'],
-                             title="PCA des classes prédites par le modèle")
-            fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
-                             title="PCA du jeu de données test")
 
             t2 = time.time()
             # affichage l'arbre sortie graphique
@@ -183,25 +171,55 @@ def FitPredict(app) :
                                  filled=True)
                 plt.show()
 
-            #html.P('Résult {}'.format(str(moy)))
-            return html.Div(
-                ["Matrice de confusion : ",html.Br(),
-                 dash_table.DataTable(
-                     id='Tree_cm',
-                     columns=[{"name": i, "id": i} for i in df_cm.columns],
-                     data=df_cm.to_dict('records'),),
-                 html.Br(),"f1_score : {}".format(f1_score(y_test, y_pred,average="macro")),html.Br(),
-                 "recall score : {}".format(recall_score(y_test, y_pred,average="macro")),
-                 html.Br(),"precision score : {}".format(precision_score(y_test, y_pred,average="macro")),
-                 html.Br(),"accuracy score : {}".format(accuracy_score(y_test, y_pred)),
-                 html.Br(),
-                 dcc.Graph(
-                     id='res_Tree_FitPredict_graph',
-                     figure=fig_tree),
-                 dcc.Graph(
-                     id='res_Tree_FitPredict_inputgraph',
-                     figure=fig_input_data),
-                 "temps : {} sec".format(t2-t1)]),""
+
+
+            if len(feature) > 1:
+                #affichage graphique des prédictions réalisé
+                pca = PCA(n_components=2)
+                temp = pca.fit_transform(X_test)
+                coord = pd.DataFrame(temp,columns=["PCA1","PCA2"])
+                Y_pred = pd.DataFrame(y_pred,columns=["tree_clusters"])
+                Y_test = pd.DataFrame(y_test.values,columns=[target])
+
+                result = pd.concat([coord,Y_pred,Y_test],axis=1)
+                fig_tree = px.scatter(result, x="PCA1", y="PCA2", color="tree_clusters", hover_data=['tree_clusters'],
+                                 title="PCA des classes prédites par le modèle")
+                fig_input_data = px.scatter(result, x="PCA1", y="PCA2", color=target, hover_data=[target],
+                                 title="PCA du jeu de données test")
+
+                return html.Div(
+                    ["Matrice de confusion : ",html.Br(),
+                     dash_table.DataTable(
+                         id='Tree_cm',
+                         columns=[{"name": i, "id": i} for i in df_cm.columns],
+                         data=df_cm.to_dict('records'),),
+                     html.Br(),"f1_score : {}".format(f1_score(y_test, y_pred,average="macro")),html.Br(),
+                     "recall score : {}".format(recall_score(y_test, y_pred,average="macro")),
+                     html.Br(),"precision score : {}".format(precision_score(y_test, y_pred,average="macro")),
+                     html.Br(),"accuracy score : {}".format(accuracy_score(y_test, y_pred)),
+                     html.Br(),
+                     dcc.Graph(
+                         id='res_Tree_FitPredict_graph',
+                         figure=fig_tree),
+                     dcc.Graph(
+                         id='res_Tree_FitPredict_inputgraph',
+                         figure=fig_input_data),
+                     "temps : {} sec".format(t2-t1)]),""
+
+            if len(feature) == 1:
+                return html.Div(
+                    ["Matrice de confusion : ",html.Br(),
+                     dash_table.DataTable(
+                         id='Tree_cm',
+                         columns=[{"name": i, "id": i} for i in df_cm.columns],
+                         data=df_cm.to_dict('records'),),
+                     html.Br(),"f1_score : {}".format(f1_score(y_test, y_pred,average="macro")),html.Br(),
+                     "recall score : {}".format(recall_score(y_test, y_pred,average="macro")),
+                     html.Br(),"precision score : {}".format(precision_score(y_test, y_pred,average="macro")),
+                     html.Br(),"accuracy score : {}".format(accuracy_score(y_test, y_pred)),
+                     html.Br(),
+                     "temps : {} sec".format(t2-t1)]),""
+
 
 
 def CrossValidation(app):
