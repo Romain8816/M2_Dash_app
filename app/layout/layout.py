@@ -41,12 +41,12 @@ location_folder = dbc.Row(
     [
         dbc.Col(
             dbc.Input(
-                    type="text", id="location_folder", placeholder="Chemin absolu du répertoire du répertoire de travail : C:\..",persistence=True
+                    autocomplete="off", type="text", id="location_folder", placeholder="Chemin absolu du répertoire du répertoire de travail : C:\.."
                 ),className="mb-3"
         ),
         dbc.Col(
             dbc.Button(
-                "Valider", id="validation_folder", className="me-2", n_clicks=1
+                "Valider", id="validation_folder", className="me-2", n_clicks=0
             ),className="mb-3"
         )
     ]
@@ -65,7 +65,7 @@ dataset_selection = dbc.Row(
                 placeholder="Choisir un jeu de données",
                 clearable=False,
                 style={'width':'50%'},
-                persistence = True
+                persistence = False
             ),
             width=10,
         ),
